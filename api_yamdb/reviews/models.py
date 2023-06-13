@@ -1,5 +1,5 @@
-from django.core import validators
 from django.contrib.auth import get_user_model
+from django.core import validators
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -10,13 +10,13 @@ User = get_user_model()
 
 class Categories(models.Model):
     name = models.CharField(
-        verbose_name='Название группы',
+        verbose_name='Название категории',
         help_text='Введите название категории, это поле обязательное',
         max_length=256,
         blank=False
     )
     slug = models.SlugField(
-        verbose_name='Слаг группы',
+        verbose_name='Слаг категории',
         help_text='Это обязательное поле с уникальным значением',
         max_length=50,
         blank=False,
