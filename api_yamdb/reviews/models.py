@@ -39,7 +39,7 @@ class Genres(models.Model):
         help_text='Введите слаг жанра, слаг должен быть уникальным',
         max_length=50,
         blank=False,
-        unique=True,
+        unique=True
     )
 
     def __str__(self):
@@ -61,23 +61,21 @@ class Titles(models.Model):
         verbose_name='Описание произведения',
         help_text='Введите описания произведения'
     )
-    genre = models.ForeignKey(
+    genre = models.OneToOneField(
         Genres,
         related_name='genres',
         verbose_name='Жанр',
         help_text='Введите жанр произведения, поле обязательное',
         on_delete=models.CASCADE,
-        blank=False,
-        unique=True
+        blank=False
     )
-    category = models.ForeignKey(
+    category = models.OneToOneField(
         Categories,
         related_name='categories',
         verbose_name='Категория',
         help_text='Введите категорию произведения, поле обязательное',
         on_delete=models.CASCADE,
-        blank=False,
-        unique=True
+        blank=False
     )
 
     def __str__(self):
@@ -101,13 +99,12 @@ class Reviews(models.Model):
         on_delete=models.CASCADE,
         blank=False
     )
-    title_id = models.ForeignKey(
+    title_id = models.OneToOneField(
         Titles,
         related_name='reviews_title_id',
         help_text='id произведения, обязательное поле',
         on_delete=models.CASCADE,
-        blank=False,
-        unique=True
+        blank=False
     )
     text = models.TextField(
         verbose_name='Отзыв',
