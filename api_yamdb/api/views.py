@@ -1,5 +1,4 @@
 from rest_framework import viewsets
-
 from .mixins import GetListCreateObjectDelObject, AuthorSaveMixins
 
 from .models import Categories, Comments, Genres, Title, Reviews
@@ -39,3 +38,7 @@ class CommentsViewSet(AuthorSaveMixins, viewsets.ModelViewSet):
         review_id = self.kwargs.get('review_id')
         queryset = Comments.objects.filter(review_id=review_id)
         return queryset
+
+
+class UsersViewSet(viewsets.ModelViewSet):
+    pass
