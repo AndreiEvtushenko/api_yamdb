@@ -7,17 +7,17 @@ from .serializers import (CategoriesSerializer, CommentsSerializer,
                           ReviewsSerializer)
 
 
-class CategoriesViewSet(AuthorSaveMixins, GetListCreateObjectDelObject):
+class CategoriesViewSet(GetListCreateObjectDelObject):
     queryset = Categories.objects.all()
     serializer_class = CategoriesSerializer
 
 
-class GenresViewSet(AuthorSaveMixins, GetListCreateObjectDelObject):
+class GenresViewSet(GetListCreateObjectDelObject):
     queryset = Genres.objects.all()
     serializer_class = GenresSerializer
 
 
-class TitlesViewSet(AuthorSaveMixins, viewsets.ModelViewSet):
+class TitlesViewSet(viewsets.ModelViewSet):
     queryset = Titles.objects.all()
     serializer_class = TitlesSerializer
 
