@@ -46,7 +46,7 @@ class Genres(models.Model):
         return self.name
 
 
-class Title(models.Model):
+class Titles(models.Model):
     name = models.CharField(
         verbose_name='Название произведения',
         help_text='Введите название произведения, это поле обязательное',
@@ -66,15 +66,16 @@ class Title(models.Model):
         related_name='genres',
         verbose_name='Жанр',
         help_text='Введите жанр произведения, поле обязательное',
-        on_delete=models.SET_NULL,
-        blank=False
+        on_delete=models.CASCADE,
+        blank=False,
+        unique=True
     )
     category = models.ForeignKey(
         Categories,
         related_name='categories',
         verbose_name='Категория',
         help_text='Введите категорию произведения, поле обязательное',
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         blank=False,
         unique=True
     )
@@ -95,14 +96,14 @@ class Title(models.Model):
 class Reviews(models.Model):
     author = models.ForeignKey(
         User,
-        related_name='comments',
+        related_name='reviews_authors',
         verbose_name='Автор',
         on_delete=models.CASCADE,
         blank=False
     )
     title_id = models.ForeignKey(
-        Title,
-        related_name='reviews',
+        Titles,
+        related_name='reviews_title_id',
         help_text='id произведения, обязательное поле',
         on_delete=models.CASCADE,
         blank=False,
@@ -131,14 +132,14 @@ class Reviews(models.Model):
 class Comments(models.Model):
     author = models.ForeignKey(
         User,
-        related_name='comments',
+        related_name='comments_author',
         verbose_name='Автор',
         on_delete=models.CASCADE,
         blank=False
     )
-    title_id = models.OneToOneField(
+    title_id = models.ForeignKey(
         Reviews,
-        related_name='comments',
+        related_name='comments_titles_id',
         help_text='id отзыва, обязательное поле.',
         on_delete=models.CASCADE,
         blank=False

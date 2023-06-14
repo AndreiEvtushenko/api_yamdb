@@ -23,7 +23,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'api',
     'reviews',
-    'user',
+    'users',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -105,6 +106,6 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
 
-# Created new user 
+# Created new user
 
 AUTH_USER_MODEL = 'users.User'

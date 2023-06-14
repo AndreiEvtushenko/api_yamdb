@@ -16,6 +16,7 @@ class User(AbstractUser):
         blank=True
     )
     role = models.CharField(
+        max_length=50,
         verbose_name='Модель пользователя',
         help_text='Можно выбрать из трех: "user" "moderator" "admin"',
         choices=ROLES,
