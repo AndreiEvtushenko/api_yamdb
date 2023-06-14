@@ -97,7 +97,7 @@ class Reviews(models.Model):
         User,
         related_name='comments',
         verbose_name='Автор',
-        on_delete=models.CASCADE(),
+        on_delete=models.CASCADE,
         blank=False
     )
     title_id = models.ForeignKey(
@@ -133,13 +133,15 @@ class Comments(models.Model):
         User,
         related_name='comments',
         verbose_name='Автор',
-        on_delete=models.CASCADE(),
+        on_delete=models.CASCADE,
         blank=False
     )
     title_id = models.OneToOneField(
         Reviews,
         related_name='comments',
-        help_text='id отзыва, обязательное поле.'
+        help_text='id отзыва, обязательное поле.',
+        on_delete=models.CASCADE,
+        blank=False
     )
     text = models.TextField(
         verbose_name='Текст комментария',
