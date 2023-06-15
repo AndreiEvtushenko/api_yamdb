@@ -41,6 +41,12 @@ class Genres(models.Model):
         blank=False,
         unique=True
     )
+    titles = models.ManyToManyField(
+        'Titles',
+        related_name='genres_titles',
+        verbose_name='Фильмы',
+        help_text='Выберите фильмы для жанра'
+    )
 
     def __str__(self):
         return self.name
@@ -61,22 +67,21 @@ class Titles(models.Model):
         verbose_name='Описание произведения',
         help_text='Введите описания произведения'
     )
-    genre = models.OneToOneField(
+    genre = models.ManyToManyField(
         Genres,
         related_name='genres',
         verbose_name='Жанр',
         help_text='Введите жанр произведения, поле обязательное',
-        on_delete=models.CASCADE,
         blank=False
     )
-    category = models.OneToOneField(
+    category = models.ForeignKey(
         Categories,
+        on_delete=models.CASCADE,
         related_name='categories',
         verbose_name='Категория',
         help_text='Введите категорию произведения, поле обязательное',
-        on_delete=models.CASCADE,
         blank=False
-    )
+    ) 
 
     def __str__(self):
         return self.name
@@ -99,7 +104,7 @@ class Reviews(models.Model):
         on_delete=models.CASCADE,
         blank=False
     )
-    title_id = models.OneToOneField(
+    title_id = models.ForeignKey(
         Titles,
         related_name='reviews_title_id',
         help_text='id произведения, обязательное поле',

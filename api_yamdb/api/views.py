@@ -5,7 +5,7 @@ from .mixins import GetListCreateObjectDelObject, AuthorSaveMixins
 from reviews.models import Categories, Comments, Genres, Titles, Reviews
 from .serializers import (CategoriesSerializer, CommentsSerializer,
                           GenresSerializer, TitlesSerializer,
-                          ReviewsSerializer, UserSerializers)
+                          ReviewsSerializer, UserSerializer)
 
 User = get_user_model()
 
@@ -45,4 +45,4 @@ class CommentsViewSet(AuthorSaveMixins, viewsets.ModelViewSet):
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializers
+    serializer_class = UserSerializer

@@ -5,7 +5,7 @@ from api import views
 
 router1 = SimpleRouter()
 
-router1.register('users', views.UsersViewSet, basename='users')
+router1.register('users', views.UserViewSet, basename='users')
 router1.register('categories', views.CategoriesViewSet, basename='сategories')
 router1.register('titles', views.TitlesViewSet, basename='titles')
 router1.register('genres', views.GenresViewSet, basename='genres')
