@@ -153,14 +153,14 @@ class Comments(models.Model):
 
 
 class GenreTitle(models.Model):
-    title_id = models.ForeignKey(
+    title = models.ForeignKey(
         Titles,
         on_delete=models.CASCADE
     )
-    genre_id = models.ForeignKey(
+    genre = models.ForeignKey(
         Genres,
         on_delete=models.CASCADE
     )
 
     def __str__(self):
-        return f'{self.genre} {self.title}'
+        return f'{self.title} {self.genre}'
