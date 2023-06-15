@@ -1,10 +1,13 @@
+from django.contrib.auth import get_user_model
 from rest_framework import viewsets
 from .mixins import GetListCreateObjectDelObject, AuthorSaveMixins
 
 from reviews.models import Categories, Comments, Genres, Titles, Reviews
 from .serializers import (CategoriesSerializer, CommentsSerializer,
                           GenresSerializer, TitlesSerializer,
-                          ReviewsSerializer)
+                          ReviewsSerializer, UsersSerializers)
+
+User = get_user_model()
 
 
 class CategoriesViewSet(GetListCreateObjectDelObject):
@@ -40,5 +43,6 @@ class CommentsViewSet(AuthorSaveMixins, viewsets.ModelViewSet):
         return queryset
 
 
-class UsersViewSet(viewsets.ModelViewSet):
-    pass
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UsersSerializers
