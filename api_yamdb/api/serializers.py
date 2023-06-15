@@ -1,14 +1,12 @@
 from rest_framework import serializers
-from rest_framework.relations import SlugRelatedField
-from rest_framework.validators import UniqueTogetherValidator
 
-from reviews.models import Categories, Comments, Genres, Titles, Reviews
+from reviews.models import Categories, Comments, Genres, Titles, Reviews, Users
 
 
 class CategoriesSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = ('name',)
+        fields = ('name', 'slug',)
         model = Categories
 
 
@@ -26,11 +24,21 @@ class CommentsSerializer(serializers.ModelSerializer):
 class GenresSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = ('name',)
+        fields = ('name', 'slug',)
         model = Genres
 
 
 class TitlesSerializer(serializers.ModelSerializer):
+    category = serializers.SlugRelatedField(
+        read_only=False,
+        queryset=Categories.objects.all(),
+        slug_field='name',
+    )
+    genre = serializers.SlugRelatedField(
+        read_only=False,
+        queryset=Genres.objects.all(),
+        slug_field='name'
+    )
 
     class Meta:
         fields = '__all__'
@@ -45,3 +53,15 @@ class ReviewsSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Reviews
+
+
+class UserSerializer(serializers.ModelSerializer):
+    username = serializers.SlugRelatedField(
+        read_only=False,
+        queryset=User.objects.all(),
+        slug_field='username'
+    )
+
+    class Meta:
+        fields = '__all__'
+        model = User
