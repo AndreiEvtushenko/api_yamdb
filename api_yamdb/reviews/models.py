@@ -41,12 +41,6 @@ class Genres(models.Model):
         blank=False,
         unique=True
     )
-    titles = models.ManyToManyField(
-        'Titles',
-        related_name='genres_titles',
-        verbose_name='Фильмы',
-        help_text='Выберите фильмы для жанра'
-    )
 
     def __str__(self):
         return self.name
