@@ -41,12 +41,6 @@ class Genres(models.Model):
         blank=False,
         unique=True
     )
-    titles = models.ManyToManyField(
-        'Titles',
-        related_name='genres_titles',
-        verbose_name='Фильмы',
-        help_text='Выберите фильмы для жанра'
-    )
 
     def __str__(self):
         return self.name
@@ -69,6 +63,7 @@ class Titles(models.Model):
     )
     genre = models.ManyToManyField(
         Genres,
+        through='GenreTitle',
         related_name='genres',
         verbose_name='Жанр',
         help_text='Введите жанр произведения, поле обязательное',
@@ -81,7 +76,7 @@ class Titles(models.Model):
         verbose_name='Категория',
         help_text='Введите категорию произведения, поле обязательное',
         blank=False
-    ) 
+    )
 
     def __str__(self):
         return self.name
@@ -139,7 +134,7 @@ class Comments(models.Model):
         on_delete=models.CASCADE,
         blank=False
     )
-    title_id = models.ForeignKey(
+    reviews_id = models.ForeignKey(
         Reviews,
         related_name='comments_titles_id',
         help_text='id отзыва, обязательное поле.',
@@ -155,3 +150,17 @@ class Comments(models.Model):
         verbose_name='Дата',
         auto_now=True
     )
+
+
+class GenreTitle(models.Model):
+    title_id = models.ForeignKey(
+        Titles,
+        on_delete=models.CASCADE
+    )
+    genre_id = models.ForeignKey(
+        Genres,
+        on_delete=models.CASCADE
+    )
+
+    def __str__(self):
+        return f'{self.genre} {self.title}'
