@@ -23,6 +23,10 @@ class Categories(models.Model):
         unique=True,
     )
 
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+
     def __str__(self):
         return self.name
 
@@ -41,6 +45,10 @@ class Genres(models.Model):
         blank=False,
         unique=True
     )
+
+    class Meta:
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
 
     def __str__(self):
         return self.name
@@ -77,6 +85,10 @@ class Titles(models.Model):
         help_text='Введите категорию произведения, поле обязательное',
         blank=False
     )
+
+    class Meta:
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
 
     def __str__(self):
         return self.name
@@ -125,6 +137,10 @@ class Reviews(models.Model):
         auto_now=True
     )
 
+    class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+
 
 class Comments(models.Model):
     author = models.ForeignKey(
@@ -150,6 +166,10 @@ class Comments(models.Model):
         verbose_name='Дата',
         auto_now=True
     )
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
 
 
 class GenreTitle(models.Model):
