@@ -13,7 +13,8 @@ class Categories(models.Model):
         verbose_name='Название категории',
         help_text='Введите название категории, это поле обязательное',
         max_length=256,
-        blank=False
+        blank=False,
+        unique=True
     )
     slug = models.SlugField(
         verbose_name='Слаг категории',
@@ -32,14 +33,14 @@ class Genres(models.Model):
         verbose_name='Название жанра',
         help_text='Введите название жанра, это поле обязательное',
         max_length=256,
-        blank=False
+        blank=False,
     )
     slug = models.SlugField(
         verbose_name='Слаг жанра',
         help_text='Введите слаг жанра, слаг должен быть уникальным',
         max_length=50,
         blank=False,
-        unique=True
+        # unique=True
     )
 
     def __str__(self):
@@ -51,7 +52,8 @@ class Titles(models.Model):
         verbose_name='Название произведения',
         help_text='Введите название произведения, это поле обязательное',
         max_length=256,
-        blank=False
+        blank=False,
+        unique=True
     )
     year = models.IntegerField(
         verbose_name='Год выхода',

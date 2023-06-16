@@ -1,6 +1,9 @@
+# from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
 
-from reviews.models import Categories, Comments, Genres, Titles, Reviews
+from reviews.models import (
+    Categories, Comments, Genres, GenreTitle, Titles, Reviews
+)
 from users.models import User
 
 
@@ -23,6 +26,18 @@ class CommentsSerializer(serializers.ModelSerializer):
 
 
 class GenresSerializer(serializers.ModelSerializer):
+    # Если ставим валидацию, то при добавлении Title, там тоже идет проверка
+    # на уникальность и объект не добавляется
+
+    # name = serializers.CharField(
+    #     required=True,
+    #     validators=[
+    #         UniqueValidator(
+    #             queryset=Genres.objects.all(),
+    #             message="Жанр с таким именем уже существует."
+    #         )
+    #     ]
+    # )
 
     class Meta:
         fields = ('name', 'slug',)
@@ -35,15 +50,20 @@ class TitlesSerializer(serializers.ModelSerializer):
         queryset=Categories.objects.all(),
         slug_field='name',
     )
-    genre = serializers.SlugRelatedField(
-        read_only=False,
-        queryset=Genres.objects.all(),
-        slug_field='name'
-    )
+    genre = GenresSerializer(many=True,)
 
     class Meta:
         fields = '__all__'
         model = Titles
+
+    # проблема в том, что в теории данные поля не были уникальными
+    def create(self, validated_data):
+        genres = validated_data.pop('genre')
+        title = Titles.objects.create(**validated_data)
+        for genre in genres:
+            current_genre, status = Genres.objects.get_or_create(**genre)
+            GenreTitle.objects.create(genre=current_genre, title=title)
+        return title
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
