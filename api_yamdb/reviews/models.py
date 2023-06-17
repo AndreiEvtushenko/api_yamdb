@@ -13,7 +13,8 @@ class Categories(models.Model):
         verbose_name='Название категории',
         help_text='Введите название категории, это поле обязательное',
         max_length=256,
-        blank=False
+        blank=False,
+        unique=True
     )
     slug = models.SlugField(
         verbose_name='Слаг категории',
@@ -22,6 +23,10 @@ class Categories(models.Model):
         blank=False,
         unique=True,
     )
+
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
 
     def __str__(self):
         return self.name
@@ -32,15 +37,19 @@ class Genres(models.Model):
         verbose_name='Название жанра',
         help_text='Введите название жанра, это поле обязательное',
         max_length=256,
-        blank=False
+        blank=False,
     )
     slug = models.SlugField(
         verbose_name='Слаг жанра',
         help_text='Введите слаг жанра, слаг должен быть уникальным',
         max_length=50,
         blank=False,
-        unique=True
+        # unique=True
     )
+
+    class Meta:
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
 
     def __str__(self):
         return self.name
@@ -51,7 +60,8 @@ class Titles(models.Model):
         verbose_name='Название произведения',
         help_text='Введите название произведения, это поле обязательное',
         max_length=256,
-        blank=False
+        blank=False,
+        unique=True
     )
     year = models.IntegerField(
         verbose_name='Год выхода',
@@ -77,6 +87,10 @@ class Titles(models.Model):
         help_text='Введите категорию произведения, поле обязательное',
         blank=False
     )
+
+    class Meta:
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
 
     def __str__(self):
         return self.name
@@ -125,6 +139,10 @@ class Reviews(models.Model):
         auto_now=True
     )
 
+    class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+
 
 class Comments(models.Model):
     author = models.ForeignKey(
@@ -150,6 +168,10 @@ class Comments(models.Model):
         verbose_name='Дата',
         auto_now=True
     )
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
 
 
 class GenreTitle(models.Model):

@@ -2,9 +2,11 @@ from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.filters import SearchFilter
+from rest_framework.pagination import LimitOffsetPagination
 from .mixins import GetListCreateObjectDelObject, AuthorSaveMixins
 
 from reviews.models import Categories, Comments, Genres, Titles, Reviews
+from .mixins import GetListCreateObjectDelObject, AuthorSaveMixins
 from .serializers import (CategoriesSerializer, CommentsSerializer,
                           GenresSerializer, TitlesSerializer,
                           ReviewsSerializer, UserSerializer)
@@ -17,6 +19,7 @@ class CategoriesViewSet(GetListCreateObjectDelObject):
     serializer_class = CategoriesSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
+    pagination_class = LimitOffsetPagination
 
 
 class GenresViewSet(GetListCreateObjectDelObject):
@@ -24,6 +27,7 @@ class GenresViewSet(GetListCreateObjectDelObject):
     serializer_class = GenresSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
+    pagination_class = LimitOffsetPagination
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
@@ -32,10 +36,12 @@ class TitlesViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filterset_fields = ('name', 'year', 'description', 'genre', 'category')
     search_fields = ('name',)
+    pagination_class = LimitOffsetPagination
 
 
 class ReviewsViewSet(AuthorSaveMixins, viewsets.ModelViewSet):
     serializer_class = ReviewsSerializer
+    pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -45,6 +51,7 @@ class ReviewsViewSet(AuthorSaveMixins, viewsets.ModelViewSet):
 
 class CommentsViewSet(AuthorSaveMixins, viewsets.ModelViewSet):
     serializer_class = CommentsSerializer
+    pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         review_id = self.kwargs.get('review_id')
@@ -55,3 +62,4 @@ class CommentsViewSet(AuthorSaveMixins, viewsets.ModelViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    pagination_class = LimitOffsetPagination
