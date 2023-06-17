@@ -16,5 +16,5 @@ class UserAdmin(admin.ModelAdmin):
         'role'
     )
     search_fields = ('username',)
-    list_filter = ('pub_date',)
+    list_filter = ('username',)
     empty_value_display = 'пусто'
