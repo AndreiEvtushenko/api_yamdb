@@ -1,8 +1,16 @@
 from django.contrib.auth import get_user_model
-from rest_framework import status, viewsets
+
+lViewsfrom rest_framework import status, viewsets
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets
+from rest_framework.filters import SearchFilter
+from rest_framework.pagination import LimitOffsetPagination
+from .mixins import GetListCreateObjectDelObject, AuthorSaveMixins
 
 
 from reviews.models import Categories, Comments, Genres, Titles, Reviews
@@ -18,6 +26,8 @@ User = get_user_model()
 class CategoriesViewSet(GetListCreateObject):
     queryset = Categories.objects.all()
     serializer_class = CategoriesSerializer
+    filter_backends = (SearchFilter,)
+    search_fields = ('name',)
     pagination_class = LimitOffsetPagination
 
 
@@ -40,6 +50,8 @@ class CategoriesDel(APIView):
 class GenresViewSet(GetListCreateObject):
     queryset = Genres.objects.all()
     serializer_class = GenresSerializer
+    filter_backends = (SearchFilter,)
+    search_fields = ('name',)
     pagination_class = LimitOffsetPagination
 
 
@@ -62,6 +74,9 @@ class GenresDel(APIView):
 class TitlesViewSet(viewsets.ModelViewSet):
     queryset = Titles.objects.all()
     serializer_class = TitlesSerializer
+    filter_backends = (DjangoFilterBackend, SearchFilter)
+    filterset_fields = ('name', 'year', 'description', 'genre', 'category')
+    search_fields = ('name',)
     pagination_class = LimitOffsetPagination
 
 
