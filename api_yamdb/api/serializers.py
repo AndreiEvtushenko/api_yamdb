@@ -77,11 +77,12 @@ class ReviewsSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    username = serializers.SlugRelatedField(
-        read_only=False,
-        queryset=User.objects.all(),
-        slug_field='username'
-    )
+    # Эта часть кода не работает, пришлось закомментить
+    # username = serializers.SlugRelatedField(
+    #     read_only=False,
+    #     queryset=User.objects.all(),
+    #     slug_field='username'
+    # )
 
     class Meta:
         fields = '__all__'
