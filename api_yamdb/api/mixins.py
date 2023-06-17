@@ -1,10 +1,16 @@
 from rest_framework import mixins, viewsets
 
 
-class GetListCreateObjectDelObject(mixins.CreateModelMixin,
-                                   mixins.ListModelMixin,
-                                   mixins.DestroyModelMixin,
-                                   viewsets.GenericViewSet):
+class GetListCreateObject(mixins.CreateModelMixin,
+                          mixins.ListModelMixin,
+                          viewsets.GenericViewSet):
+    pass
+
+
+class GetListCreateRetrieveObject(mixins.CreateModelMixin,
+                                  mixins.ListModelMixin,
+                                  mixins.RetrieveModelMixin,
+                                  viewsets.GenericViewSet):
     pass
 
 
