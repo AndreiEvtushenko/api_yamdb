@@ -1,5 +1,7 @@
 from rest_framework import mixins, viewsets
 
+from users.models import User
+
 
 class GetListCreateObject(mixins.CreateModelMixin,
                           mixins.ListModelMixin,
@@ -16,4 +18,5 @@ class GetListCreateRetrieveObject(mixins.CreateModelMixin,
 
 class AuthorSaveMixins:
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save(author=User.objects.get(username='admin'),
+                        title_id=self.kwargs.get('title_id'))

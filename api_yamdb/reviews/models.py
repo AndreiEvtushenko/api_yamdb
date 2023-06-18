@@ -29,7 +29,7 @@ class Categories(models.Model):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return self.name
+        return self.slug
 
 
 class Genres(models.Model):
@@ -52,7 +52,7 @@ class Genres(models.Model):
         verbose_name_plural = 'Жанры'
 
     def __str__(self):
-        return self.name
+        return self.slug
 
 
 class Titles(models.Model):
@@ -84,8 +84,7 @@ class Titles(models.Model):
         on_delete=models.CASCADE,
         related_name='categories',
         verbose_name='Категория',
-        help_text='Введите категорию произведения, поле обязательное',
-        blank=False
+        help_text='Введите категорию произведения, поле обязательное'
     )
 
     class Meta:

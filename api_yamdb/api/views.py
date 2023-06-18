@@ -1,22 +1,19 @@
 from django.contrib.auth import get_user_model
 
-lViewsfrom rest_framework import status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework.exceptions import ValidationError
 
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets
 from rest_framework.filters import SearchFilter
-from rest_framework.pagination import LimitOffsetPagination
-from .mixins import GetListCreateObjectDelObject, AuthorSaveMixins
-
 
 from reviews.models import Categories, Comments, Genres, Titles, Reviews
 from .mixins import (AuthorSaveMixins, GetListCreateObject,
                      GetListCreateRetrieveObject)
 from .serializers import (CategoriesSerializer, CommentsSerializer,
+                          TitlesCreateUpdateSerializer,
                           GenresSerializer, TitlesSerializer,
                           ReviewsSerializer, UserSerializer)
 
@@ -73,14 +70,20 @@ class GenresDel(APIView):
 
 class TitlesViewSet(viewsets.ModelViewSet):
     queryset = Titles.objects.all()
-    serializer_class = TitlesSerializer
+    # serializer_class = TitlesSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filterset_fields = ('name', 'year', 'description', 'genre', 'category')
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
 
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return TitlesSerializer
+        elif self.request.method in ['POST', 'PUT', 'PATCH']:
+            return TitlesCreateUpdateSerializer
 
-class ReviewsViewSet(AuthorSaveMixins, viewsets.ModelViewSet):
+
+class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewsSerializer
     pagination_class = LimitOffsetPagination
 
@@ -89,15 +92,32 @@ class ReviewsViewSet(AuthorSaveMixins, viewsets.ModelViewSet):
         queryset = Reviews.objects.filter(title_id=title_id)
         return queryset
 
+    def perform_create(self, serializer):
+        title_id = self.kwargs.get('title_id')
+        title_object = Titles.objects.get(id=title_id)
+        if title_object is None:
+            raise ValidationError('Bad')
+        serializer.save(
+            author=User.objects.get(username='admin'), title_id=title_object)
 
-class CommentsViewSet(AuthorSaveMixins, viewsets.ModelViewSet):
+
+class CommentsViewSet(viewsets.ModelViewSet):
     serializer_class = CommentsSerializer
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
-        review_id = self.kwargs.get('review_id')
-        queryset = Comments.objects.filter(review_id=review_id)
+        reviews_id = self.kwargs.get('review_id')
+        queryset = Comments.objects.filter(reviews_id=reviews_id)
         return queryset
+
+    def perform_create(self, serializer):
+        review_id = self.kwargs.get('review_id')
+        review_id_object = Reviews.objects.get(id=review_id)
+        if review_id_object is None:
+            raise ValidationError('Bad')
+        serializer.save(
+            author=User.objects.get(username='admin'),
+            reviews_id=review_id_object)
 
 
 class UserViewSet(GetListCreateRetrieveObject):

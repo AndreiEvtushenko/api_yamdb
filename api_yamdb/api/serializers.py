@@ -18,11 +18,12 @@ class CommentsSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
+    reviews_id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         fields = '__all__'
         model = Comments
-        read_only_fields = ('title_id',)
+        # read_only_fields = ('title_id',)
 
 
 class GenresSerializer(serializers.ModelSerializer):
@@ -45,31 +46,19 @@ class GenresSerializer(serializers.ModelSerializer):
 
 
 class TitlesSerializer(serializers.ModelSerializer):
-    category = serializers.SlugRelatedField(
-        read_only=False,
-        queryset=Categories.objects.all(),
-        slug_field='name',
-    )
-    genre = GenresSerializer(many=True,)
+    category = CategoriesSerializer()
+    genre = GenresSerializer(read_only=True, many=True)
 
     class Meta:
         fields = '__all__'
         model = Titles
-
-    # проблема в том, что в теории данные поля не были уникальными
-    def create(self, validated_data):
-        genres = validated_data.pop('genre')
-        title = Titles.objects.create(**validated_data)
-        for genre in genres:
-            current_genre, status = Genres.objects.get_or_create(**genre)
-            GenreTitle.objects.create(genre=current_genre, title=title)
-        return title
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
+    title_id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         fields = '__all__'
@@ -87,3 +76,37 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = User
+
+
+class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
+    genre = serializers.ListSerializer(
+        child=serializers.CharField()
+    )
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Categories.objects.all())
+
+    class Meta:
+        fields = '__all__'
+        model = Titles
+
+    def create(self, validated_data):
+        genre_slugs = validated_data.pop('genre')
+        title_name = validated_data.pop('name')
+        title_year = validated_data.pop('year')
+        category_slug = validated_data.pop('category')
+        category = Categories.objects.get(slug=category_slug)
+        title_description = validated_data.pop('description')
+
+        title = Titles.objects.create(category=category,
+                                      name=title_name,
+                                      year=title_year,
+                                      description=title_description)
+
+        for genre_slug in genre_slugs:
+            current_genre = Genres.objects.get(slug=genre_slug)
+            genre_title = GenreTitle.objects.create(
+                genre=current_genre, title=title)
+            title.save()
+            genre_title.save()
+        return title
