@@ -3,13 +3,15 @@ from rest_framework import mixins, viewsets
 from users.models import User
 
 
-class GetListCreateObject(mixins.CreateModelMixin,
-                          mixins.ListModelMixin,
-                          viewsets.GenericViewSet):
+class GetListCreateDelObject(mixins.CreateModelMixin,
+                             mixins.ListModelMixin,
+                             mixins.DestroyModelMixin,
+                             viewsets.GenericViewSet):
     pass
 
 
-class GetListCreateRetrieveObject(mixins.CreateModelMixin,
+class GetListCreateRetrieveObject(mixins.UpdateModelMixin,
+                                  mixins.CreateModelMixin,
                                   mixins.ListModelMixin,
                                   mixins.RetrieveModelMixin,
                                   viewsets.GenericViewSet):
