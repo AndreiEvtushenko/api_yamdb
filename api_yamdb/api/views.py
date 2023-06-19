@@ -1,21 +1,24 @@
 from django.contrib.auth import get_user_model
 
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
+from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
+from rest_framework_simplejwt.tokens import AccessToken
 
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter
-
+from .permissions import IsUserOrForbidden, IsUserOrAuthorOrReadOnly
 from reviews.models import Categories, Comments, Genres, Titles, Reviews
-from .mixins import (AuthorSaveMixins, GetListCreateDelObject,
-                     GetListCreateRetrieveObject)
+from .mixins import GetListCreateDelObject
 from .serializers import (CategoriesSerializer, CommentsSerializer,
                           TitlesCreateUpdateSerializer,
                           GenresSerializer, TitlesSerializer,
                           ReviewsSerializer, UserSerializer)
+from .utils.code_utils import create_verification_code
+from .utils.email_utils import send_code
 
 User = get_user_model()
 
@@ -26,6 +29,7 @@ class CategoriesViewSet(GetListCreateDelObject):
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
+    permission_classes = IsAdminUser
 
     def destroy(self, request, *args, **kwargs):
         if request.method == 'DELETE':
@@ -48,6 +52,7 @@ class GenresViewSet(GetListCreateDelObject):
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
+    permission_classes = IsAdminUser
 
     def destroy(self, request, *args, **kwargs):
         if request.method == 'DELETE':
@@ -70,6 +75,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
     filterset_fields = ('name', 'year', 'description', 'genre', 'category')
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
+    permission_classes = IsAdminUser
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -81,6 +87,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
 class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewsSerializer
     pagination_class = LimitOffsetPagination
+    permission_classes = IsUserOrAuthorOrReadOnly
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -99,6 +106,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 class CommentsViewSet(viewsets.ModelViewSet):
     serializer_class = CommentsSerializer
     pagination_class = LimitOffsetPagination
+    permission_classes = IsUserOrAuthorOrReadOnly
 
     def get_queryset(self):
         reviews_id = self.kwargs.get('review_id')
@@ -119,8 +127,10 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = LimitOffsetPagination
+    permission_classes = [IsAdminUser, ]
 
     def retrieve(self, request, *args, **kwargs):
+        self.permission_classes = [IsAuthenticated, IsUserOrForbidden]
         action = self.kwargs.get('pk')
         if action == 'me':
             user = self.request.user
@@ -155,5 +165,34 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-def SignUpView(request):
-    pass
+class SignUpView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        username = request.data.get('username')
+        confirmation_code = create_verification_code()
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response('Пользователь с указанным именем не существует',
+                            status=status.HTTP_400_BAD_REQUEST)
+        user.confirmation_code = confirmation_code
+        user.save()
+        send_code(email, confirmation_code, username)
+        data = {
+            'email': email,
+            'username': username
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class TokenView(APIView):
+    def post(self, request):
+        username = request.data.get('username')
+        confirmation_code = request.data.get('confirmation_code')
+        user = User.objects.get(username=username)
+        if user.confirmation_code == confirmation_code:
+            token = AccessToken.for_user(user)
+            return Response({'token': str(token)}, status=status.HTTP_200_OK)
+        else:
+            return Response({'message': 'Неверный код подтверждения'},
+                            status=status.HTTP_400_BAD_REQUEST)
