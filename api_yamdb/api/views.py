@@ -10,7 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 
 from reviews.models import Categories, Comments, Genres, Titles, Reviews
-from .mixins import (AuthorSaveMixins, GetListCreateObject,
+from .mixins import (AuthorSaveMixins, GetListCreateDelObject,
                      GetListCreateRetrieveObject)
 from .serializers import (CategoriesSerializer, CommentsSerializer,
                           TitlesCreateUpdateSerializer,
@@ -20,41 +20,36 @@ from .serializers import (CategoriesSerializer, CommentsSerializer,
 User = get_user_model()
 
 
-class CategoriesViewSet(GetListCreateObject):
+class CategoriesViewSet(GetListCreateDelObject):
     queryset = Categories.objects.all()
     serializer_class = CategoriesSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
 
-
-class CategoriesDel(APIView):
-
-    def delete(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs):
         if request.method == 'DELETE':
-            categories = self.kwargs.get('slug')
+            categories = self.kwargs.get('pk')
             try:
                 categories = Categories.objects.get(slug=categories)
                 categories.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except Categories.DoesNotExist:
                 return Response(
-                    data="Категория не найден", status=status.HTTP_404_NOT_FOUND)
+                    data="Категория не найден",
+                    status=status.HTTP_404_NOT_FOUND)
         else:
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-class GenresViewSet(GetListCreateObject):
+class GenresViewSet(GetListCreateDelObject):
     queryset = Genres.objects.all()
     serializer_class = GenresSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
 
-
-class GenresDel(APIView):
-
-    def delete(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs):
         if request.method == 'DELETE':
             slug_genres = self.kwargs.get('slug')
             try:
@@ -120,17 +115,34 @@ class CommentsViewSet(viewsets.ModelViewSet):
             reviews_id=review_id_object)
 
 
-class UserViewSet(GetListCreateRetrieveObject):
+class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = LimitOffsetPagination
 
+    def retrieve(self, request, *args, **kwargs):
+        action = self.kwargs.get('pk')
+        if action == 'me':
+            user = self.request.user
+        else:
+            user = User.objects.get(username=action)
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
 
-class UsersDel(APIView):
+    def partial_update(self, request, *args, **kwargs):
+        action = self.kwargs.get('pk')
+        if action == 'me':
+            user = self.request.user
+        else:
+            user = User.objects.get(username=action)
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
-    def delete(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs):
         if request.method == 'DELETE':
-            username = self.kwargs.get('username')
+            username = self.kwargs.get('pk')
             try:
                 user = User.objects.get(username=username)
                 user.delete()
@@ -141,3 +153,7 @@ class UsersDel(APIView):
                     status=status.HTTP_404_NOT_FOUND)
         else:
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+def SignUpView(request):
+    pass

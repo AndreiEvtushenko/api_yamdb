@@ -2,7 +2,6 @@ from django.urls import include, path
 from rest_framework.routers import SimpleRouter
 
 from api import views
-from .views import CategoriesDel, GenresDel, UsersDel
 
 router1 = SimpleRouter()
 
@@ -23,12 +22,6 @@ router1.register(
 )
 
 urlpatterns = [
-    path('v1/users/<str:username>/',
-         UsersDel.as_view(), name='user-del'),
-    path('v1/categories/<slug:slug>/',
-         CategoriesDel.as_view(), name='categories-del'),
-    path('v1/genres/<slug:slug>/',
-         GenresDel.as_view(), name='genres-del'),
     path('v1/', include(router1.urls)),
     #path('v1/auth/', include([
     #    path('signup/', views.SignUpView.as_view()),

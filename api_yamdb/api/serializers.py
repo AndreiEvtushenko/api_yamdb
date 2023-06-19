@@ -74,7 +74,8 @@ class UserSerializer(serializers.ModelSerializer):
     # )
 
     class Meta:
-        fields = '__all__'
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')
         model = User
 
 
@@ -107,6 +108,5 @@ class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
             current_genre = Genres.objects.get(slug=genre_slug)
             genre_title = GenreTitle.objects.create(
                 genre=current_genre, title=title)
-            title.save()
             genre_title.save()
         return title
