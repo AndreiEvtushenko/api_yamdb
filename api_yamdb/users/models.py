@@ -1,5 +1,11 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
+
+
+def validate_username(value):
+    if value.lower() == 'me':
+        raise ValidationError('Имя поля не может быть "me".')
 
 
 ROLES = [
@@ -10,6 +16,13 @@ ROLES = [
 
 
 class User(AbstractUser):
+    username = models.CharField(
+        verbose_name='Уникальное имя пользователя',
+        help_text='Введите username',
+        blank=False,
+        max_length=255,
+        validators=[validate_username],
+        unique=True)
     bio = models.TextField(
         verbose_name='Информация о пользователе',
         help_text='Введите информацию о пользователе',
@@ -22,6 +35,11 @@ class User(AbstractUser):
         choices=ROLES,
         default='user',
         blank=False
+    )
+    confirmation_code = models.CharField(
+        max_length=10,
+        null=True,
+        blank=True
     )
 
     class Meta:
