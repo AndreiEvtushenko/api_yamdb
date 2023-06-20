@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .permissions import IsUserOrForbidden, IsUserOrAuthorOrReadOnly
+from .permissions import IsUserOrForbidden, IsUserOrAuthorOrReadOnly, SaveMethodsOrAdmin
 from reviews.models import Categories, Comments, Genres, Titles, Reviews
 from .mixins import GetListCreateDelObject
 from .serializers import (CategoriesSerializer, CommentsSerializer,
@@ -29,13 +29,13 @@ class CategoriesViewSet(GetListCreateDelObject):
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
-    permission_classes = IsAdminUser
+    permission_classes = [SaveMethodsOrAdmin, ]
 
     def destroy(self, request, *args, **kwargs):
         if request.method == 'DELETE':
-            categories = self.kwargs.get('pk')
+            slug_categories = self.kwargs.get('pk')
             try:
-                categories = Categories.objects.get(slug=categories)
+                categories = Categories.objects.get(slug=slug_categories)
                 categories.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except Categories.DoesNotExist:
@@ -52,11 +52,11 @@ class GenresViewSet(GetListCreateDelObject):
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
-    permission_classes = IsAdminUser
+    permission_classes = [SaveMethodsOrAdmin, ]
 
     def destroy(self, request, *args, **kwargs):
         if request.method == 'DELETE':
-            slug_genres = self.kwargs.get('slug')
+            slug_genres = self.kwargs.get('pk')
             try:
                 genres = Genres.objects.get(slug=slug_genres)
                 genres.delete()
