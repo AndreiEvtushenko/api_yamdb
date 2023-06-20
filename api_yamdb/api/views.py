@@ -70,12 +70,11 @@ class GenresViewSet(GetListCreateDelObject):
 
 class TitlesViewSet(viewsets.ModelViewSet):
     queryset = Titles.objects.all()
-    # serializer_class = TitlesSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filterset_fields = ('name', 'year', 'description', 'genre', 'category')
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
-    permission_classes = IsAdminUser
+    permission_classes = [SaveMethodsOrAdmin, ]
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -87,7 +86,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
 class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewsSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = IsUserOrAuthorOrReadOnly
+    permission_classes = [IsUserOrAuthorOrReadOnly, ]
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
