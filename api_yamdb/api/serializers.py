@@ -48,20 +48,31 @@ class GenresSerializer(serializers.ModelSerializer):
 class TitlesSerializer(serializers.ModelSerializer):
     category = CategoriesSerializer()
     genre = GenresSerializer(read_only=True, many=True)
+    rating = serializers.SerializerMethodField()
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'name', 'year', 'rating',
+                  'description', 'genre', 'category',)
         model = Titles
+
+    def get_rating(self, obj):
+        ratings = obj.reviews_title_id.all()
+        scores = [rating.score for rating in ratings]
+        if scores:
+            average_score = sum(scores) / len(scores)
+            return average_score
+        return 0
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    title_id = serializers.PrimaryKeyRelatedField(read_only=True)
+    pub_date = serializers.DateField(format="%Y-%m-%dT%H:%M:%SZ")
+    # title_id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'text', 'author', 'score', 'pub_date',)
         model = Reviews
 
 
@@ -110,3 +121,25 @@ class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
                 genre=current_genre, title=title)
             genre_title.save()
         return title
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.year = validated_data.get('year', instance.year)
+        instance.description = validated_data.get(
+            'description', instance.description)
+
+        category_slug = validated_data.pop('category')
+        if category_slug:
+            category = Categories.objects.get(slug=category_slug)
+            instance.category = category
+
+        genre_slugs = validated_data.pop('genre')
+        if genre_slugs is not None:
+            instance.genre.clear()
+            for genre_slug in genre_slugs:
+                current_genre = Genres.objects.get(slug=genre_slug)
+                genre_title = GenreTitle.objects.create(
+                    genre=current_genre, title=instance)
+                genre_title.save()
+        instance.save()
+        return instance

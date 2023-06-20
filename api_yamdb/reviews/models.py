@@ -1,9 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.core import validators
-from django.core.exceptions import ValidationError
 from django.db import models
 
-import datetime
+from .validators import validate_year
 
 User = get_user_model()
 
@@ -65,6 +64,7 @@ class Titles(models.Model):
     )
     year = models.IntegerField(
         verbose_name='Год выхода',
+        validators=[validate_year],
         blank=False
     )
     description = models.TextField(
@@ -93,15 +93,6 @@ class Titles(models.Model):
 
     def __str__(self):
         return self.name
-
-    def clean(self):
-        """Проверяет корректность года выпуска"""
-        current_datetime = datetime.datetime.now()
-        current_year = current_datetime.year
-        if self.year > current_year:
-            raise ValidationError(
-                'Год выпуска произведения не может быть больше текущего'
-            )
 
 
 class Reviews(models.Model):
