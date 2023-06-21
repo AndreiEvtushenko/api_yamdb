@@ -3,33 +3,36 @@ from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.filters import SearchFilter
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .permissions import IsUserOrForbidden, IsUserOrAuthorOrReadOnly, SaveMethodsOrAdmin
+from .permissions import (CommentReviewsPermission,
+                          OnlyAdminOrSuperUserPermission,
+                          SaveMethodsOrAdminPermission)
 from reviews.models import Categories, Comments, Genres, Titles, Reviews
-from .mixins import GetListCreateDelObject
+from .mixins import GetListCreateDelObjectMixin, UserMeViewSetMixin
 from .serializers import (CategoriesSerializer, CommentsSerializer,
                           TitlesCreateUpdateSerializer,
                           GenresSerializer, TitlesSerializer,
-                          ReviewsSerializer, UserSerializer)
+                          ReviewsSerializer, UserSerializer,
+                          UserMeSerializer)
 from .utils.code_utils import create_verification_code
 from .utils.email_utils import send_code
 
 User = get_user_model()
 
 
-class CategoriesViewSet(GetListCreateDelObject):
+class CategoriesViewSet(GetListCreateDelObjectMixin):
     queryset = Categories.objects.all()
     serializer_class = CategoriesSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
-    permission_classes = [SaveMethodsOrAdmin, ]
+    permission_classes = [SaveMethodsOrAdminPermission, ]
 
     def destroy(self, request, *args, **kwargs):
         if request.method == 'DELETE':
@@ -46,13 +49,13 @@ class CategoriesViewSet(GetListCreateDelObject):
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-class GenresViewSet(GetListCreateDelObject):
+class GenresViewSet(GetListCreateDelObjectMixin):
     queryset = Genres.objects.all()
     serializer_class = GenresSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
-    permission_classes = [SaveMethodsOrAdmin, ]
+    permission_classes = [SaveMethodsOrAdminPermission, ]
 
     def destroy(self, request, *args, **kwargs):
         if request.method == 'DELETE':
@@ -74,7 +77,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
     filterset_fields = ('name', 'year', 'description', 'genre', 'category')
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
-    permission_classes = [SaveMethodsOrAdmin, ]
+    permission_classes = [SaveMethodsOrAdminPermission, ]
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -86,7 +89,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
 class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewsSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = [IsUserOrAuthorOrReadOnly, ]
+    permission_classes = [CommentReviewsPermission, ]
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -105,7 +108,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 class CommentsViewSet(viewsets.ModelViewSet):
     serializer_class = CommentsSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = IsUserOrAuthorOrReadOnly
+    permission_classes = [CommentReviewsPermission, ]
 
     def get_queryset(self):
         reviews_id = self.kwargs.get('review_id')
@@ -126,45 +129,55 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = [IsAdminUser, ]
+    permission_classes = [OnlyAdminOrSuperUserPermission, ]
 
     def retrieve(self, request, *args, **kwargs):
-        self.permission_classes = [IsAuthenticated, IsUserOrForbidden]
-        action = self.kwargs.get('pk')
-        if action == 'me':
-            user = self.request.user
-        else:
-            user = User.objects.get(username=action)
-        serializer = self.get_serializer(user)
-        return Response(serializer.data)
+        username = self.kwargs.get('pk')
+        try:
+            user = User.objects.get(username=username)
+            serializer = self.get_serializer(user)
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response(
+                data="Пользователь не найден",
+                status=status.HTTP_404_NOT_FOUND)
 
     def partial_update(self, request, *args, **kwargs):
-        action = self.kwargs.get('pk')
-        if action == 'me':
-            user = self.request.user
-        else:
-            user = User.objects.get(username=action)
-        serializer = self.get_serializer(user, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
+        username = self.kwargs.get('pk')
+        try:
+            user = User.objects.get(username=username)
+            serializer = self.get_serializer(
+                user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response(
+                data="Пользователь не найден",
+                status=status.HTTP_404_NOT_FOUND)
 
     def destroy(self, request, *args, **kwargs):
-        if request.method == 'DELETE':
-            username = self.kwargs.get('pk')
-            try:
-                user = User.objects.get(username=username)
-                user.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            except User.DoesNotExist:
-                return Response(
-                    data="Пользователь не найден",
-                    status=status.HTTP_404_NOT_FOUND)
-        else:
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        username = self.kwargs.get('pk')
+        try:
+            user = User.objects.get(username=username)
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except User.DoesNotExist:
+            return Response(
+                data="Пользователь не найден",
+                status=status.HTTP_404_NOT_FOUND)
+
+
+class UserMeAPIView(UserMeViewSetMixin):
+    serializer_class = UserMeSerializer
+    permission_classes = [IsAuthenticated, ]
+
+    def get_object(self):
+        return self.request.user
 
 
 class SignUpView(APIView):
+
     def post(self, request):
         email = request.data.get('email')
         username = request.data.get('username')
@@ -185,6 +198,7 @@ class SignUpView(APIView):
 
 
 class TokenView(APIView):
+
     def post(self, request):
         username = request.data.get('username')
         confirmation_code = request.data.get('confirmation_code')

@@ -22,6 +22,7 @@ router1.register(
 )
 
 urlpatterns = [
+    path('v1/users/me/', views.UserMeAPIView.as_view({'get': 'retrieve', 'patch': 'partial_update'})),
     path('v1/', include(router1.urls)),
     path('v1/auth/', include([
         path('signup/', views.SignUpView.as_view()),

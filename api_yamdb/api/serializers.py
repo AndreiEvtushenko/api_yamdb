@@ -18,10 +18,11 @@ class CommentsSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    reviews_id = serializers.PrimaryKeyRelatedField(read_only=True)
+    pub_date = serializers.DateField(format="%Y-%m-%dT%H:%M:%SZ")
+    # reviews_id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'text', 'author', 'pub_date')
         model = Comments
         # read_only_fields = ('title_id',)
 
@@ -59,7 +60,7 @@ class TitlesSerializer(serializers.ModelSerializer):
         ratings = obj.reviews_title_id.all()
         scores = [rating.score for rating in ratings]
         if scores:
-            average_score = sum(scores) / len(scores)
+            average_score = round(sum(scores) / len(scores))
             return average_score
         return 0
 
@@ -77,12 +78,15 @@ class ReviewsSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    # Эта часть кода не работает, пришлось закомментить
-    # username = serializers.SlugRelatedField(
-    #     read_only=False,
-    #     queryset=User.objects.all(),
-    #     slug_field='username'
-    # )
+
+    class Meta:
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')
+        model = User
+
+
+class UserMeSerializer(serializers.ModelSerializer):
+    role = serializers.CharField(read_only=True)
 
     class Meta:
         fields = ('username', 'email', 'first_name',
