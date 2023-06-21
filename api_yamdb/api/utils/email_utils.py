@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 # Параметры SMTP-сервера
 smtp_server = 'smtp.gmail.com'
 smtp_port = 587
-smtp_username = 'evtushenkoad@gmail.com'
+smtp_username = ''
 smtp_password = 'awlmubbnmxbjsapt'
 
 

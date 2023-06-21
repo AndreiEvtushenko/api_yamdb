@@ -18,10 +18,10 @@ from .mixins import GetListCreateDelObjectMixin, UserMeViewSetMixin
 from .serializers import (CategoriesSerializer, CommentsSerializer,
                           TitlesCreateUpdateSerializer,
                           GenresSerializer, TitlesSerializer,
-                          ReviewsSerializer, UserSerializer,
-                          UserMeSerializer)
+                          ReviewsSerializer, SignupSerializer,
+                          UserSerializer, UserMeSerializer)
 from .utils.code_utils import create_verification_code
-from .utils.email_utils import send_code
+from .utils.fake_email_utils import send_fake_email
 
 User = get_user_model()
 
@@ -82,7 +82,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.request.method == 'GET':
             return TitlesSerializer
-        elif self.request.method in ['POST', 'PUT', 'PATCH']:
+        elif self.request.method in ['POST', 'PATCH', 'DELETE']:
             return TitlesCreateUpdateSerializer
 
 
@@ -127,6 +127,8 @@ class CommentsViewSet(viewsets.ModelViewSet):
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
+    filter_backends = (DjangoFilterBackend, SearchFilter)
+    search_fields = ('username',)
     serializer_class = UserSerializer
     pagination_class = LimitOffsetPagination
     permission_classes = [OnlyAdminOrSuperUserPermission, ]
@@ -177,24 +179,37 @@ class UserMeAPIView(UserMeViewSetMixin):
 
 
 class SignUpView(APIView):
-
     def post(self, request):
-        email = request.data.get('email')
-        username = request.data.get('username')
+        serializer = SignupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+
+        email = validated_data['email']
+        username = validated_data['username']
+
+        user = User.objects.filter(username=username, email=email)
+        if not user:
+            if User.objects.filter(email=email).exists():
+                message = 'Пользователь с таким email уже существует'
+                return Response(message, status=status.HTTP_400_BAD_REQUEST)
+            elif User.objects.filter(username=username).exists():
+                message = 'Пользователь с таким username уже существует'
+                return Response(message, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                user = User.objects.create(username=username,
+                                           email=email)
+                confirmation_code = create_verification_code()
+                user.confirmation_code = confirmation_code
+                user.save()
+                send_fake_email(username, confirmation_code, email)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+        user = User.objects.get(username=username, email=email)
         confirmation_code = create_verification_code()
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return Response('Пользователь с указанным именем не существует',
-                            status=status.HTTP_400_BAD_REQUEST)
         user.confirmation_code = confirmation_code
         user.save()
-        send_code(email, confirmation_code, username)
-        data = {
-            'email': email,
-            'username': username
-        }
-        return Response(data, status=status.HTTP_200_OK)
+        send_fake_email(username, confirmation_code, email)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TokenView(APIView):
@@ -202,7 +217,12 @@ class TokenView(APIView):
     def post(self, request):
         username = request.data.get('username')
         confirmation_code = request.data.get('confirmation_code')
-        user = User.objects.get(username=username)
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response(
+                data="Пользователь не найден",
+                status=status.HTTP_404_NOT_FOUND)
         if user.confirmation_code == confirmation_code:
             token = AccessToken.for_user(user)
             return Response({'token': str(token)}, status=status.HTTP_200_OK)
