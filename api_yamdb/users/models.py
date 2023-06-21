@@ -1,11 +1,9 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 
-
-def validate_username(value):
-    if value.lower() == 'me':
-        raise ValidationError('Имя поля не может быть "me".')
+from .validator import validate_username
 
 
 ROLES = [
@@ -20,9 +18,13 @@ class User(AbstractUser):
         verbose_name='Уникальное имя пользователя',
         help_text='Введите username',
         blank=False,
-        max_length=255,
-        validators=[validate_username],
-        unique=True)
+        max_length=150,
+        validators=[validate_username,
+                    RegexValidator(regex=r'^[\w.@+-]+$',
+                                   message='Неправильный формат поля',
+                                   code='invalid_field')],
+        unique=True
+        )
     bio = models.TextField(
         verbose_name='Информация о пользователе',
         help_text='Введите информацию о пользователе',
