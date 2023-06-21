@@ -14,6 +14,7 @@ ROLES = [
 
 
 class User(AbstractUser):
+    """Модель пользователей"""
     username = models.CharField(
         verbose_name='Уникальное имя пользователя',
         help_text='Введите username',
