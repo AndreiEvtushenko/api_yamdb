@@ -1,10 +1,11 @@
 from django.contrib.auth import get_user_model
 
 from django_filters.rest_framework import DjangoFilterBackend
+from django_filters import rest_framework as filters
 from rest_framework import status, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
@@ -26,12 +27,19 @@ from .utils.fake_email_utils import send_fake_email
 User = get_user_model()
 
 
+class TitlesFilter(filters.FilterSet):
+    genre = filters.CharFilter(field_name='genre__slug', lookup_expr='iexact')
+
+    class Meta:
+        model = Titles
+        fields = ['name', 'year', 'description', 'genre', 'category']
+
 class CategoriesViewSet(GetListCreateDelObjectMixin):
-    queryset = Categories.objects.all()
+    queryset = Categories.objects.all().order_by('id')
     serializer_class = CategoriesSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageNumberPagination
     permission_classes = [SaveMethodsOrAdminPermission, ]
 
     def destroy(self, request, *args, **kwargs):
@@ -50,11 +58,11 @@ class CategoriesViewSet(GetListCreateDelObjectMixin):
 
 
 class GenresViewSet(GetListCreateDelObjectMixin):
-    queryset = Genres.objects.all()
+    queryset = Genres.objects.all().order_by('id')
     serializer_class = GenresSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageNumberPagination
     permission_classes = [SaveMethodsOrAdminPermission, ]
 
     def destroy(self, request, *args, **kwargs):
@@ -72,11 +80,12 @@ class GenresViewSet(GetListCreateDelObjectMixin):
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
-    queryset = Titles.objects.all()
+    queryset = Titles.objects.all().order_by('id')
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filterset_fields = ('name', 'year', 'description', 'genre', 'category')
+    filterset_class = TitlesFilter
+    #filterset_fields = ('name', 'year', 'description', 'genre', 'category')
     search_fields = ('name',)
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageNumberPagination
     permission_classes = [SaveMethodsOrAdminPermission, ]
 
     def get_serializer_class(self):
@@ -88,31 +97,31 @@ class TitlesViewSet(viewsets.ModelViewSet):
 
 class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewsSerializer
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageNumberPagination
     permission_classes = [CommentReviewsPermission, ]
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
-        queryset = Reviews.objects.filter(title_id=title_id)
+        queryset = Reviews.objects.filter(title_id=title_id).order_by('id')
         return queryset
 
     def perform_create(self, serializer):
         title_id = self.kwargs.get('title_id')
         title_object = Titles.objects.get(id=title_id)
         if title_object is None:
-            raise ValidationError('Bad')
-        serializer.save(
-            author=User.objects.get(username='admin'), title_id=title_object)
+            raise ValidationError('Нет такого произведения')
+        serializer.save(author=self.request.user, title=title_object)
 
 
 class CommentsViewSet(viewsets.ModelViewSet):
     serializer_class = CommentsSerializer
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageNumberPagination
     permission_classes = [CommentReviewsPermission, ]
 
     def get_queryset(self):
         reviews_id = self.kwargs.get('review_id')
-        queryset = Comments.objects.filter(reviews_id=reviews_id)
+        queryset = Comments.objects.filter(
+            reviews_id=reviews_id).order_by('id')
         return queryset
 
     def perform_create(self, serializer):
@@ -120,17 +129,15 @@ class CommentsViewSet(viewsets.ModelViewSet):
         review_id_object = Reviews.objects.get(id=review_id)
         if review_id_object is None:
             raise ValidationError('Bad')
-        serializer.save(
-            author=User.objects.get(username='admin'),
-            reviews_id=review_id_object)
+        serializer.save(author=self.request.user, reviews_id=review_id_object)
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('id')
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('username',)
     serializer_class = UserSerializer
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageNumberPagination
     permission_classes = [OnlyAdminOrSuperUserPermission, ]
 
     def retrieve(self, request, *args, **kwargs):
