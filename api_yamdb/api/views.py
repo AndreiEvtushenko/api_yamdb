@@ -28,18 +28,19 @@ User = get_user_model()
 
 
 class TitlesFilter(filters.FilterSet):
-    genre = filters.CharFilter(field_name='genre__slug', lookup_expr='iexact')
+    genre = filters.CharFilter(field_name='genre__slug')
+    category = filters.CharFilter(field_name='category')
+    name = filters.CharFilter(field_name='name')
+    year = filters.NumberFilter(field_name='year')
 
     class Meta:
         model = Titles
-        fields = ['name', 'year', 'description', 'genre', 'category']
+        fields = ['name', 'year', 'genre', 'category']
+
 
 class CategoriesViewSet(GetListCreateDelObjectMixin):
     """Вьюсет категорий"""
     queryset = Categories.objects.all().order_by('id')
-
-    
-
     serializer_class = CategoriesSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
@@ -64,9 +65,6 @@ class CategoriesViewSet(GetListCreateDelObjectMixin):
 class GenresViewSet(GetListCreateDelObjectMixin):
     """Вьюсет жанров"""
     queryset = Genres.objects.all().order_by('id')
-
-    
-
     serializer_class = GenresSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
@@ -90,9 +88,6 @@ class GenresViewSet(GetListCreateDelObjectMixin):
 class TitlesViewSet(viewsets.ModelViewSet):
     """Вьюсет произведений"""
     queryset = Titles.objects.all().order_by('id')
-
-   
-
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filterset_class = TitlesFilter
     #filterset_fields = ('name', 'year', 'description', 'genre', 'category')

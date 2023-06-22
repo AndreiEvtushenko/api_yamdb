@@ -72,7 +72,7 @@ class ReviewsSerializer(serializers.ModelSerializer):
     # title_id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
-        fields = ('text', 'author', 'score', 'pub_date',)
+        fields = ('id', 'text', 'author', 'score', 'pub_date',)
         model = Reviews
 
 
