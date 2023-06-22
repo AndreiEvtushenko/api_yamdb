@@ -52,6 +52,11 @@ class CommentReviewsPermission(BasePermission):
         if request.user.is_authenticated:
             if request.user.role in ['admin', 'moderator']:
                 return True
+        if request.user.is_authenticated:
+            if request.user.role in ['admin', 'moderator']:
+                return True
+            if request.method in ['PATCH', 'DELETE'] and request.user == obj.user:
+                return True
 
 
 class OnlyAdminOrSuperUserPermission(BasePermission):
