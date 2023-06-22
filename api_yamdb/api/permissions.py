@@ -37,6 +37,7 @@ class CommentReviewsPermission(BasePermission):
                 return True
             if request.method == 'POST':
                 return True
+
         if request.method in SAFE_METHODS:
             return True
         if request.method not in SAFE_METHODS:
@@ -47,7 +48,11 @@ class CommentReviewsPermission(BasePermission):
             if request.user.is_superuser:
                 return True
         if request.method in SAFE_METHODS:
+
             return True
+        if request.user.is_authenticated:
+            if request.user.role in ['admin', 'moderator']:
+                return True
         if request.user.is_authenticated:
             if request.user.role in ['admin', 'moderator']:
                 return True
@@ -81,3 +86,4 @@ class OnlyAdminOrSuperUserPermission(BasePermission):
         if request.user.is_authenticated:
             return (request.user.role == 'admin' or
                     request.user.is_superuser)
+
