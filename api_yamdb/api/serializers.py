@@ -29,22 +29,15 @@ class CommentsSerializer(serializers.ModelSerializer):
 
 
 class GenresSerializer(serializers.ModelSerializer):
-    # Если ставим валидацию, то при добавлении Title, там тоже идет проверка
-    # на уникальность и объект не добавляется
-
-    # name = serializers.CharField(
-    #     required=True,
-    #     validators=[
-    #         UniqueValidator(
-    #             queryset=Genres.objects.all(),
-    #             message="Жанр с таким именем уже существует."
-    #         )
-    #     ]
-    # )
 
     class Meta:
         fields = ('name', 'slug',)
         model = Genres
+
+    def validate_slug(self, value):
+        if Genres.objects.filter(slug=value).exists():
+            raise serializers.ValidationError('Такой slug уже занят')
+        return value
 
 
 class TitlesSerializer(serializers.ModelSerializer):
@@ -64,7 +57,7 @@ class TitlesSerializer(serializers.ModelSerializer):
         if scores:
             average_score = round(sum(scores) / len(scores))
             return average_score
-        return 0
+        return None
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
@@ -99,16 +92,31 @@ class UserMeSerializer(serializers.ModelSerializer):
 
 
 class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
-    genre = serializers.ListSerializer(
-        child=serializers.CharField()
-    )
+    genre = serializers.ListSerializer(child=serializers.CharField())
     category = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Categories.objects.all())
+    rating = serializers.SerializerMethodField()
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'name', 'year', 'rating',
+                  'description', 'genre', 'category')
         model = Titles
+
+    def validate_name(self, value):
+        if not value:
+            raise serializers.ValidationError('Поле не может быть пустым')
+        if len(value) > 256:
+            raise serializers.ValidationError('Поле не более 256 символов')
+        return value
+
+    def get_rating(self, obj):
+        ratings = obj.reviews_title_id.all()
+        scores = [rating.score for rating in ratings]
+        if scores:
+            average_score = round(sum(scores) / len(scores))
+            return average_score
+        return None
 
     def create(self, validated_data):
         genre_slugs = validated_data.pop('genre')
@@ -151,3 +159,40 @@ class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
                 genre_title.save()
         instance.save()
         return instance
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Создаем новый словарь с нужными полями
+        custom_representation = {
+            'id': representation['id'],
+            'name': representation['name'],
+            'year': representation['year'],
+            'rating': representation['rating'],
+            'description': representation['description'],
+            'genre': representation['genre'],
+            'category': representation['category']
+        }
+
+        return custom_representation
+
+
+class SignupSerializer(serializers.ModelSerializer):
+
+    username = serializers.RegexField(
+        regex=r'^[\w.@+-]+$',
+        max_length=150,
+        required=True
+    )
+    email = serializers.EmailField(max_length=254, required=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email')
+
+    def validate_username(self, value):
+        if not value:
+            raise serializers.ValidationError('Username не может быть пустым.')
+        if value == 'me':
+            raise serializers.ValidationError('Нельзя использовать me')
+        return value

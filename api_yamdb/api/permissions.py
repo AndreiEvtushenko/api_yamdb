@@ -1,4 +1,4 @@
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
@@ -17,26 +17,6 @@ class SaveMethodsOrAdminPermission(BasePermission):
         if request.user.is_authenticated:
             if request.user.role == 'admin' or request.user.is_superuser:
                 return True
-        return False
-
-
-class UserViewSetPermission(BasePermission):
-    def has_permission(self, request, view):
-        if request.user.username in ['admin', ]:
-            return True
-        if request.user.role == 'admin':
-            return True
-        if request.method in ['GET', 'PATCH'] and request.user.is_authenticated:
-            return True
-        return False
-
-    def has_object_permission(self, request, view, obj):
-        if request.user.username in ['admin', ]:
-            return True
-        if request.user.role == 'admin':
-            return True
-        if request.user == obj.user:
-            return True
         return False
 
 
@@ -62,9 +42,13 @@ class CommentReviewsPermission(BasePermission):
 
 class OnlyAdminOrSuperUserPermission(BasePermission):
     def has_permission(self, request, view):
-        return (request.user.role == 'admin' or
-                request.user.is_superuser)
+        if request.method == 'PUT':
+            raise MethodNotAllowed(request.method)
+        if request.user.is_authenticated:
+            return (request.user.role == 'admin' or
+                    request.user.is_superuser)
 
     def has_object_permission(self, request, view, obj):
-        return (request.user.role == 'admin' or
-                request.user.is_superuser)
+        if request.user.is_authenticated:
+            return (request.user.role == 'admin' or
+                    request.user.is_superuser)
