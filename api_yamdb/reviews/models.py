@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core import validators
 from django.db import models
 
@@ -56,7 +57,7 @@ class Genres(models.Model):
         return self.slug
 
 
-class Titles(models.Model):
+class Title(models.Model):
     """Модель произведений"""
     name = models.CharField(
         verbose_name='Название произведения',
@@ -98,7 +99,7 @@ class Titles(models.Model):
         return self.name
 
 
-class Reviews(models.Model):
+class Review(models.Model):
     """Модель отзывов"""
     author = models.ForeignKey(
         User,
@@ -107,8 +108,8 @@ class Reviews(models.Model):
         on_delete=models.CASCADE,
         blank=False
     )
-    title_id = models.ForeignKey(
-        Titles,
+    title = models.ForeignKey(
+        Title,
         related_name='reviews_title_id',
         help_text='id произведения, обязательное поле',
         on_delete=models.CASCADE,
@@ -134,6 +135,12 @@ class Reviews(models.Model):
     )
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'title'],
+                name='unique_author_title'
+            )
+        ]
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
 
@@ -148,7 +155,7 @@ class Comments(models.Model):
         blank=False
     )
     reviews_id = models.ForeignKey(
-        Reviews,
+        Review,
         related_name='comments_titles_id',
         help_text='id отзыва, обязательное поле.',
         on_delete=models.CASCADE,
@@ -172,7 +179,7 @@ class Comments(models.Model):
 class GenreTitle(models.Model):
     """Модель жанров"""
     title = models.ForeignKey(
-        Titles,
+        Title,
         on_delete=models.CASCADE
     )
     genre = models.ForeignKey(

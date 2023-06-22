@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from rest_framework.exceptions import NotFound
 
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as filters
@@ -14,11 +15,11 @@ from rest_framework_simplejwt.tokens import AccessToken
 from .permissions import (CommentReviewsPermission,
                           OnlyAdminOrSuperUserPermission,
                           SaveMethodsOrAdminPermission)
-from reviews.models import Categories, Comments, Genres, Titles, Reviews
+from reviews.models import Categories, Comments, Genres, Title, Review
 from .mixins import GetListCreateDelObjectMixin, UserMeViewSetMixin
 from .serializers import (CategoriesSerializer, CommentsSerializer,
-                          TitlesCreateUpdateSerializer,
-                          GenresSerializer, TitlesSerializer,
+                          GenresSerializer, TokenSerializer,
+                          TitlesCreateUpdateSerializer, TitlesSerializer,
                           ReviewsSerializer, SignupSerializer,
                           UserSerializer, UserMeSerializer)
 from .utils.code_utils import create_verification_code
@@ -29,13 +30,13 @@ User = get_user_model()
 
 class TitlesFilter(filters.FilterSet):
     genre = filters.CharFilter(field_name='genre__slug')
-    category = filters.CharFilter(field_name='category')
+    category = filters.CharFilter(field_name='category__slug')
     name = filters.CharFilter(field_name='name')
     year = filters.NumberFilter(field_name='year')
 
     class Meta:
-        model = Titles
-        fields = ['name', 'year', 'genre', 'category']
+        model = Title
+        fields = ['genre', 'category', 'year', 'name']
 
 
 class CategoriesViewSet(GetListCreateDelObjectMixin):
@@ -87,11 +88,11 @@ class GenresViewSet(GetListCreateDelObjectMixin):
 
 class TitlesViewSet(viewsets.ModelViewSet):
     """Вьюсет произведений"""
-    queryset = Titles.objects.all().order_by('id')
+    queryset = Title.objects.all().order_by('id')
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filterset_class = TitlesFilter
-    #filterset_fields = ('name', 'year', 'description', 'genre', 'category')
-    search_fields = ('name',)
+    # filterset_fields = ('name', 'year', 'description', 'genre', 'category')
+    search_fields = ('id', 'name',)
     pagination_class = PageNumberPagination
     permission_classes = [SaveMethodsOrAdminPermission, ]
 
@@ -109,15 +110,20 @@ class ReviewsViewSet(viewsets.ModelViewSet):
     permission_classes = [CommentReviewsPermission, ]
 
     def get_queryset(self):
-        title_id = self.kwargs.get('title_id')
-        queryset = Reviews.objects.filter(title_id=title_id).order_by('id')
+        title = self.kwargs.get('title_id')
+        queryset = Review.objects.filter(title=title).order_by('id')
         return queryset
 
     def perform_create(self, serializer):
-        title_id = self.kwargs.get('title_id')
-        title_object = Titles.objects.get(id=title_id)
+        title = self.kwargs.get('title_id')
+        title_object = Title.objects.get(id=title)
         if title_object is None:
             raise ValidationError('Нет такого произведения')
+        review_copy = Review.objects.filter(
+            author=self.request.user, title=title_object
+        )
+        if review_copy:
+            raise ValidationError('У вас уже есть отзыв у этого произведения')
         serializer.save(author=self.request.user, title=title_object)
 
 
@@ -134,19 +140,16 @@ class CommentsViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        review_id = self.kwargs.get('review_id')
-        review_id_object = Reviews.objects.get(id=review_id)
-        if review_id_object is None:
-            raise ValidationError('Bad')
-        serializer.save(author=self.request.user, reviews_id=review_id_object)
+        try:
+            review = Review.objects.get(id=self.kwargs.get('review_id'))
+        except Review.DoesNotExist:
+            raise NotFound('Отзыв не найден')
+        serializer.save(author=self.request.user, reviews_id=review)
 
 
 class UserViewSet(viewsets.ModelViewSet):
     """Вьюсет пользователей"""
     queryset = User.objects.all().order_by('id')
-
-
-
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('username',)
     serializer_class = UserSerializer
@@ -235,17 +238,33 @@ class SignUpView(APIView):
 class TokenView(APIView):
 
     def post(self, request):
-        username = request.data.get('username')
-        confirmation_code = request.data.get('confirmation_code')
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return Response(
-                data="Пользователь не найден",
-                status=status.HTTP_404_NOT_FOUND)
-        if user.confirmation_code == confirmation_code:
+        serializer = TokenSerializer(data=request.data)
+        if serializer.is_valid():
+            validated_data = serializer.validated_data
+            username = validated_data['username']
+            confirmation_code = validated_data['confirmation_code']
+
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                return Response(
+                    {'message': 'Пользователь не найден'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            if user.confirmation_code != confirmation_code:
+                return Response(
+                    {'message': 'Неверный код подтверждения'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             token = AccessToken.for_user(user)
-            return Response({'token': str(token)}, status=status.HTTP_200_OK)
+            return Response(
+                {'token': str(token)},
+                status=status.HTTP_200_OK
+            )
         else:
-            return Response({'message': 'Неверный код подтверждения'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
