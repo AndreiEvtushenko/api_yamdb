@@ -15,6 +15,7 @@ class CategoriesSerializer(serializers.ModelSerializer):
 
 
 class CommentsSerializer(serializers.ModelSerializer):
+    """Сериализатор комментариев""" 
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
@@ -40,7 +41,11 @@ class GenresSerializer(serializers.ModelSerializer):
 
 
 class TitlesSerializer(serializers.ModelSerializer):
+    """Сериализатор произведений""" 
     category = CategoriesSerializer(read_only=True)
+
+    
+    
     genre = GenresSerializer(read_only=True, many=True)
     rating = serializers.SerializerMethodField()
 
@@ -59,6 +64,7 @@ class TitlesSerializer(serializers.ModelSerializer):
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
+    """Сериализатор отзывов""" 
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
@@ -71,6 +77,7 @@ class ReviewsSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор пользователей""" 
 
     class Meta:
         fields = ('username', 'email', 'first_name',
@@ -88,10 +95,12 @@ class UserMeSerializer(serializers.ModelSerializer):
 
 
 class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
+
     #genre = serializers.ListSerializer(child=serializers.CharField())
     genre = serializers.SlugRelatedField(many=True,
                                          slug_field='slug',
                                          queryset=Genres.objects.all())
+
     category = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Categories.objects.all())
@@ -158,6 +167,7 @@ class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
                 genre_title.save()
         instance.save()
         return instance
+
 
 
 class SignupSerializer(serializers.ModelSerializer):

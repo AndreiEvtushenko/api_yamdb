@@ -35,7 +35,11 @@ class TitlesFilter(filters.FilterSet):
         fields = ['name', 'year', 'description', 'genre', 'category']
 
 class CategoriesViewSet(GetListCreateDelObjectMixin):
+    """Вьюсет категорий"""
     queryset = Categories.objects.all().order_by('id')
+
+    
+
     serializer_class = CategoriesSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
@@ -58,7 +62,11 @@ class CategoriesViewSet(GetListCreateDelObjectMixin):
 
 
 class GenresViewSet(GetListCreateDelObjectMixin):
+    """Вьюсет жанров"""
     queryset = Genres.objects.all().order_by('id')
+
+    
+
     serializer_class = GenresSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
@@ -80,7 +88,11 @@ class GenresViewSet(GetListCreateDelObjectMixin):
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
+    """Вьюсет произведений"""
     queryset = Titles.objects.all().order_by('id')
+
+   
+
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filterset_class = TitlesFilter
     #filterset_fields = ('name', 'year', 'description', 'genre', 'category')
@@ -96,6 +108,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
+    """Вьюсет отзывов"""
     serializer_class = ReviewsSerializer
     pagination_class = PageNumberPagination
     permission_classes = [CommentReviewsPermission, ]
@@ -114,6 +127,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
 
 class CommentsViewSet(viewsets.ModelViewSet):
+    """Вьюсет комментариев"""
     serializer_class = CommentsSerializer
     pagination_class = PageNumberPagination
     permission_classes = [CommentReviewsPermission, ]
@@ -133,7 +147,11 @@ class CommentsViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """Вьюсет пользователей"""
     queryset = User.objects.all().order_by('id')
+
+
+
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('username',)
     serializer_class = UserSerializer

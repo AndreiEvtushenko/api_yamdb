@@ -23,6 +23,9 @@ class SaveMethodsOrAdminPermission(BasePermission):
             if request.user.role == 'admin':
                 return True
 
+        return False
+
+
 
 class CommentReviewsPermission(BasePermission):
     def has_permission(self, request, view):
@@ -55,6 +58,7 @@ class OnlyAdminOrSuperUserPermission(BasePermission):
         if request.method == 'PUT':
             raise MethodNotAllowed(request.method)
         if request.user.is_authenticated:
+
             if request.user.is_superuser:
                 return True
         if request.user.is_authenticated:
@@ -70,3 +74,9 @@ class OnlyAdminOrSuperUserPermission(BasePermission):
         if request.user.is_authenticated:
             if request.user.role == 'admin':
                 return True
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_authenticated:
+            return (request.user.role == 'admin' or
+                    request.user.is_superuser)
+
