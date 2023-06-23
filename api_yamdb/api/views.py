@@ -116,9 +116,10 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         title = self.kwargs.get('title_id')
-        title_object = Title.objects.get(id=title)
-        if title_object is None:
-            raise ValidationError('Нет такого произведения')
+        try:
+            title_object = Title.objects.get(id=title)
+        except Exception as e:
+            raise NotFound('Нет такого произведения')
         review_copy = Review.objects.filter(
             author=self.request.user, title=title_object
         )
