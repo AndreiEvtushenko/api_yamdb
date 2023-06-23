@@ -3,6 +3,7 @@ import string
 
 
 def create_verification_code():
+    """Создает код для подтверждения пользователя"""
     passlength = 6
     a = string.ascii_lowercase
     b = string.ascii_uppercase
