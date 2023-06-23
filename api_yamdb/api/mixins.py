@@ -8,14 +8,6 @@ class GetListCreateDelObjectMixin(mixins.CreateModelMixin,
     pass
 
 
-class GetListCreateRetrieveObjectMixin(mixins.UpdateModelMixin,
-                                       mixins.CreateModelMixin,
-                                       mixins.ListModelMixin,
-                                       mixins.RetrieveModelMixin,
-                                       viewsets.GenericViewSet):
-    pass
-
-
 class UserMeViewSetMixin(mixins.RetrieveModelMixin,
                          mixins.UpdateModelMixin,
                          viewsets.GenericViewSet):

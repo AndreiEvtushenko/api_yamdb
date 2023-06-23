@@ -1,20 +1,20 @@
 from django.contrib.auth import get_user_model
-from rest_framework.exceptions import NotFound
-
 from django_filters.rest_framework import DjangoFilterBackend
-from django_filters import rest_framework as filters
+
+
 from rest_framework import status, viewsets
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import AccessToken
 
 from .permissions import (CommentReviewsPermission,
                           OnlyAdminOrSuperUserPermission,
                           SaveMethodsOrAdminPermission)
+from .filters import TitlesFilter
 from reviews.models import Categories, Comments, Genres, Title, Review
 from .mixins import GetListCreateDelObjectMixin, UserMeViewSetMixin
 from .serializers import (CategoriesSerializer, CommentsSerializer,
@@ -26,17 +26,6 @@ from .utils.code_utils import create_verification_code
 from .utils.fake_email_utils import send_fake_email
 
 User = get_user_model()
-
-
-class TitlesFilter(filters.FilterSet):
-    genre = filters.CharFilter(field_name='genre__slug')
-    category = filters.CharFilter(field_name='category__slug')
-    name = filters.CharFilter(field_name='name')
-    year = filters.NumberFilter(field_name='year')
-
-    class Meta:
-        model = Title
-        fields = ['genre', 'category', 'year', 'name']
 
 
 class CategoriesViewSet(GetListCreateDelObjectMixin):
@@ -51,6 +40,7 @@ class CategoriesViewSet(GetListCreateDelObjectMixin):
     def destroy(self, request, *args, **kwargs):
         if request.method == 'DELETE':
             slug_categories = self.kwargs.get('pk')
+
             try:
                 categories = Categories.objects.get(slug=slug_categories)
                 categories.delete()
@@ -58,7 +48,9 @@ class CategoriesViewSet(GetListCreateDelObjectMixin):
             except Categories.DoesNotExist:
                 return Response(
                     data="Категория не найден",
-                    status=status.HTTP_404_NOT_FOUND)
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
         else:
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -75,13 +67,17 @@ class GenresViewSet(GetListCreateDelObjectMixin):
     def destroy(self, request, *args, **kwargs):
         if request.method == 'DELETE':
             slug_genres = self.kwargs.get('pk')
+
             try:
                 genres = Genres.objects.get(slug=slug_genres)
                 genres.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except Genres.DoesNotExist:
                 return Response(
-                    data="Жанр не найден", status=status.HTTP_404_NOT_FOUND)
+                    data="Жанр не найден",
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
         else:
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -91,14 +87,15 @@ class TitlesViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all().order_by('id')
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filterset_class = TitlesFilter
-    # filterset_fields = ('name', 'year', 'description', 'genre', 'category')
     search_fields = ('id', 'name',)
     pagination_class = PageNumberPagination
     permission_classes = [SaveMethodsOrAdminPermission, ]
 
     def get_serializer_class(self):
+        """Возвращает необходимый сериализатор"""
         if self.request.method == 'GET':
             return TitlesSerializer
+
         elif self.request.method in ['POST', 'PATCH', 'DELETE']:
             return TitlesCreateUpdateSerializer
 
@@ -116,13 +113,16 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         title = self.kwargs.get('title_id')
+
         try:
             title_object = Title.objects.get(id=title)
-        except Exception as e:
+        except Exception:
             raise NotFound('Нет такого произведения')
+
         review_copy = Review.objects.filter(
             author=self.request.user, title=title_object
         )
+
         if review_copy:
             raise ValidationError('У вас уже есть отзыв у этого произведения')
         serializer.save(author=self.request.user, title=title_object)
@@ -145,6 +145,7 @@ class CommentsViewSet(viewsets.ModelViewSet):
             review = Review.objects.get(id=self.kwargs.get('review_id'))
         except Review.DoesNotExist:
             raise NotFound('Отзыв не найден')
+
         serializer.save(author=self.request.user, reviews_id=review)
 
 
@@ -159,6 +160,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         username = self.kwargs.get('pk')
+
         try:
             user = User.objects.get(username=username)
             serializer = self.get_serializer(user)
@@ -170,6 +172,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
         username = self.kwargs.get('pk')
+
         try:
             user = User.objects.get(username=username)
             serializer = self.get_serializer(
@@ -184,6 +187,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         username = self.kwargs.get('pk')
+
         try:
             user = User.objects.get(username=username)
             user.delete()
@@ -195,6 +199,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class UserMeAPIView(UserMeViewSetMixin):
+    """Вьюсет пользователя для запроса /users/me/"""
     serializer_class = UserMeSerializer
     permission_classes = [IsAuthenticated, ]
 
@@ -203,6 +208,7 @@ class UserMeAPIView(UserMeViewSetMixin):
 
 
 class SignUpView(APIView):
+    """Вью для регистарции пользователя"""
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -237,9 +243,10 @@ class SignUpView(APIView):
 
 
 class TokenView(APIView):
-
+    """Вью для получениятокена пользователя"""
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
+
         if serializer.is_valid():
             validated_data = serializer.validated_data
             username = validated_data['username']
@@ -264,6 +271,7 @@ class TokenView(APIView):
                 {'token': str(token)},
                 status=status.HTTP_200_OK
             )
+
         else:
             return Response(
                 serializer.errors,

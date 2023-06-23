@@ -5,6 +5,7 @@ from users.models import User
 
 
 class CategoriesSerializer(serializers.ModelSerializer):
+    """Сериализатор категорий"""
 
     class Meta:
         fields = ('name', 'slug',)
@@ -13,9 +14,11 @@ class CategoriesSerializer(serializers.ModelSerializer):
 
 class CommentsSerializer(serializers.ModelSerializer):
     """Сериализатор комментариев"""
+
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
+
     pub_date = serializers.DateField(format="%Y-%m-%dT%H:%M:%SZ",
                                      read_only=True)
 
@@ -25,6 +28,7 @@ class CommentsSerializer(serializers.ModelSerializer):
 
 
 class GenresSerializer(serializers.ModelSerializer):
+    """Сериализатор жанров"""
 
     class Meta:
         fields = ('name', 'slug',)
@@ -37,7 +41,7 @@ class GenresSerializer(serializers.ModelSerializer):
 
 
 class TitlesSerializer(serializers.ModelSerializer):
-    """Сериализатор произведений"""
+    """Сериализатор проиведений для GET запросов"""
     category = CategoriesSerializer(read_only=True)
     genre = GenresSerializer(read_only=True, many=True)
     rating = serializers.SerializerMethodField()
@@ -50,6 +54,7 @@ class TitlesSerializer(serializers.ModelSerializer):
     def get_rating(self, obj):
         ratings = obj.reviews_title_id.all()
         scores = [rating.score for rating in ratings]
+
         if scores:
             average_score = round(sum(scores) / len(scores))
             return average_score
@@ -63,7 +68,6 @@ class ReviewsSerializer(serializers.ModelSerializer):
     )
     pub_date = serializers.DateField(format="%Y-%m-%dT%H:%M:%SZ",
                                      read_only=True)
-    # title_id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         fields = ('id', 'text', 'author', 'score', 'pub_date',)
@@ -80,6 +84,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserMeSerializer(serializers.ModelSerializer):
+    """Сериализатор пользователя для запроса /users/me/"""
     role = serializers.CharField(read_only=True)
 
     class Meta:
@@ -89,13 +94,16 @@ class UserMeSerializer(serializers.ModelSerializer):
 
 
 class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
-    genre = serializers.SlugRelatedField(many=True,
-                                         slug_field='slug',
-                                         queryset=Genres.objects.all())
-
+    """Сериализатор проиведений для небезопасных запросов"""
+    genre = serializers.SlugRelatedField(
+        many=True,
+        slug_field='slug',
+        queryset=Genres.objects.all()
+    )
     category = serializers.SlugRelatedField(
         slug_field='slug',
-        queryset=Categories.objects.all())
+        queryset=Categories.objects.all()
+    )
     rating = serializers.SerializerMethodField()
 
     class Meta:
@@ -113,6 +121,7 @@ class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
     def get_rating(self, obj):
         ratings = obj.reviews_title_id.all()
         scores = [rating.score for rating in ratings]
+
         if scores:
             average_score = round(sum(scores) / len(scores))
             return average_score
@@ -134,6 +143,7 @@ class SignupSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         if not value:
             raise serializers.ValidationError('Username не может быть пустым.')
+
         if value == 'me':
             raise serializers.ValidationError('Нельзя использовать me')
         return value
