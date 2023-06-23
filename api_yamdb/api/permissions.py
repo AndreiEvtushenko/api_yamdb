@@ -27,8 +27,8 @@ class CommentReviewsPermission(BasePermission):
 
         if request.user.is_authenticated:
             if (
-                request.user.is_superuser or
-                request.user.role in ['admin', 'moderator']
+                request.user.is_superuser
+                or request.user.role in ['admin', 'moderator']
             ):
                 return True
 
@@ -38,14 +38,14 @@ class CommentReviewsPermission(BasePermission):
 
         if request.user.is_authenticated:
             if (
-                request.user.is_superuser or
-                request.user.role in ['admin', 'moderator']
+                request.user.is_superuser
+                or request.user.role in ['admin', 'moderator']
             ):
                 return True
 
             if (
-                request.method in ['PATCH', 'DELETE'] and
-                request.user == obj.author
+                request.method in ['PATCH', 'DELETE']
+                and request.user == obj.author
             ):
                 return True
 
