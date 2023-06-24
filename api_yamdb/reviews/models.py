@@ -2,9 +2,13 @@ from django.contrib.auth import get_user_model
 from django.core import validators
 from django.db import models
 
+from .base_models import (CommentsReviewModel)
 from .validators import validate_year
 
 User = get_user_model()
+
+MAX_LENGTH_50 = 50
+MAX_LENGTH_256 = 256
 
 
 class Categories(models.Model):
@@ -13,15 +17,14 @@ class Categories(models.Model):
     name = models.CharField(
         verbose_name='Название категории',
         help_text='Введите название категории, это поле обязательное',
-        max_length=256,
-        blank=False,
-        unique=True
+        max_length=MAX_LENGTH_256,
+        blank=False
     )
 
     slug = models.SlugField(
         verbose_name='Слаг категории',
         help_text='Это обязательное поле с уникальным значением',
-        max_length=50,
+        max_length=MAX_LENGTH_50,
         blank=False,
         unique=True
     )
@@ -30,9 +33,6 @@ class Categories(models.Model):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
-    def __str__(self):
-        return self.slug
-
 
 class Genres(models.Model):
     """Модель жанров"""
@@ -40,23 +40,21 @@ class Genres(models.Model):
     name = models.CharField(
         verbose_name='Название жанра',
         help_text='Введите название жанра, это поле обязательное',
-        max_length=256,
+        max_length=MAX_LENGTH_256,
         blank=False
     )
 
     slug = models.SlugField(
         verbose_name='Слаг жанра',
         help_text='Введите слаг жанра, слаг должен быть уникальным',
-        max_length=50,
-        blank=False
+        max_length=MAX_LENGTH_50,
+        blank=False,
+        unique=True
     )
 
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-
-    def __str__(self):
-        return self.slug
 
 
 class Title(models.Model):
@@ -65,7 +63,7 @@ class Title(models.Model):
     name = models.CharField(
         verbose_name='Название произведения',
         help_text='Введите название произведения, это поле обязательное',
-        max_length=256,
+        max_length=MAX_LENGTH_256,
         blank=False,
         unique=True
     )
@@ -106,7 +104,7 @@ class Title(models.Model):
         return self.name
 
 
-class Review(models.Model):
+class Review(CommentsReviewModel):
     """Модель отзывов"""
 
     author = models.ForeignKey(
@@ -125,25 +123,13 @@ class Review(models.Model):
         blank=False
     )
 
-    text = models.TextField(
-        verbose_name='Отзыв',
-        help_text="Введите отзыв, поле обязательное.",
-        blank=False,
-        null=True
-    )
-
-    score = models.IntegerField(
+    score = models.PositiveSmallIntegerField(
         verbose_name='Рейтинг',
         help_text='Рейтинг от 1 до 10',
         validators=[
             validators.MinValueValidator(1),
             validators.MaxValueValidator(10)],
         blank=False
-    )
-
-    pub_date = models.DateField(
-        verbose_name='Дата',
-        auto_now=True
     )
 
     class Meta:
@@ -157,12 +143,12 @@ class Review(models.Model):
         verbose_name_plural = 'Отзывы'
 
 
-class Comments(models.Model):
+class Comments(CommentsReviewModel):
     """Модель комментариев"""
 
     author = models.ForeignKey(
         User,
-        related_name='comments_author',
+        related_name='comments_authors',
         verbose_name='Автор',
         on_delete=models.CASCADE,
         blank=False
@@ -176,24 +162,13 @@ class Comments(models.Model):
         blank=False
     )
 
-    text = models.TextField(
-        verbose_name='Текст комментария',
-        help_text='Введите текст комментария, обязательное поле.',
-        blank=False
-    )
-
-    pub_date = models.DateField(
-        verbose_name='Дата',
-        auto_now=True
-    )
-
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
 
 
 class GenreTitle(models.Model):
-    """Модель жанров"""
+    """Модель связи Title с Genres"""
 
     title = models.ForeignKey(
         Title,
@@ -204,6 +179,10 @@ class GenreTitle(models.Model):
         Genres,
         on_delete=models.CASCADE
     )
+
+    class Meta:
+        verbose_name = 'Жанр фильма'
+        verbose_name_plural = 'Жанры фильма'
 
     def __str__(self):
         return f'{self.title} {self.genre}'
