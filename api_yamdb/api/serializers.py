@@ -1,7 +1,12 @@
 from rest_framework import serializers
+from django.utils import timezone
 
 from reviews.models import Categories, Comments, Genres, Title, Review
+from .constants import USERNAME_ERROR_MESSAGE, USERNAME_REQUIRED_ERROR
+from .utils.get_rating import get_rating
 from users.models import User
+
+PUB_DATE = serializers.DateField(format="%Y-%m-%dT%H:%M:%SZ", read_only=True)
 
 
 class CategoriesSerializer(serializers.ModelSerializer):
@@ -19,8 +24,7 @@ class CommentsSerializer(serializers.ModelSerializer):
         read_only=True, slug_field='username'
     )
 
-    pub_date = serializers.DateField(format="%Y-%m-%dT%H:%M:%SZ",
-                                     read_only=True)
+    pub_date = PUB_DATE
 
     class Meta:
         fields = ('id', 'text', 'author', 'pub_date')
@@ -36,7 +40,10 @@ class GenresSerializer(serializers.ModelSerializer):
 
     def validate_slug(self, value):
         if Genres.objects.filter(slug=value).exists():
-            raise serializers.ValidationError('Такой slug уже занят')
+            raise serializers.ValidationError(
+                f'Вы указали: {value}.'
+                'Такой slug уже занят'
+            )
         return value
 
 
@@ -52,13 +59,7 @@ class TitlesSerializer(serializers.ModelSerializer):
         model = Title
 
     def get_rating(self, obj):
-        ratings = obj.reviews_title_id.all()
-        scores = [rating.score for rating in ratings]
-
-        if scores:
-            average_score = round(sum(scores) / len(scores))
-            return average_score
-        return None
+        return get_rating(self, obj)
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
@@ -66,8 +67,7 @@ class ReviewsSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    pub_date = serializers.DateField(format="%Y-%m-%dT%H:%M:%SZ",
-                                     read_only=True)
+    pub_date = PUB_DATE
 
     class Meta:
         fields = ('id', 'text', 'author', 'score', 'pub_date',)
@@ -111,28 +111,42 @@ class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
                   'description', 'genre', 'category')
         model = Title
 
-    def validate_name(self, value):
-        if not value:
-            raise serializers.ValidationError('Поле не может быть пустым')
-        if len(value) > 256:
-            raise serializers.ValidationError('Поле не более 256 символов')
-        return value
+    def validate(self, attrs):
+        name = attrs.get('name')
+        year = attrs.get('year')
+
+        if not name:
+            raise serializers.ValidationError(
+                'Поле не может быть пустым.'
+                f'Вы указали название: {name}.'
+                )
+
+        if len(name) > 256:
+            raise serializers.ValidationError('Название не более 256 символов')
+
+        current_year = timezone.now().year
+
+        if year and year > current_year:
+            raise serializers.ValidationError(
+                f'Год выпуска произведения не может быть больше текущего.'
+                f'Вы указали: "{year}", текущий год: "{current_year}".'
+            )
+
+        return attrs
 
     def get_rating(self, obj):
-        ratings = obj.reviews_title_id.all()
-        scores = [rating.score for rating in ratings]
-
-        if scores:
-            average_score = round(sum(scores) / len(scores))
-            return average_score
-        return None
+        return get_rating(self, obj)
 
 
 class SignupSerializer(serializers.ModelSerializer):
     username = serializers.RegexField(
         regex=r'^[\w.@+-]+$',
         max_length=150,
-        required=True
+        required=True,
+        error_messages={
+            'invalid': USERNAME_ERROR_MESSAGE,
+            'required': USERNAME_REQUIRED_ERROR,
+        }
     )
     email = serializers.EmailField(max_length=254, required=True)
 
