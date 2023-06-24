@@ -11,6 +11,11 @@ ROLES = [
     ('admin', 'Администратор'),
 ]
 
+MAX_LENGTH_50 = 50
+MAX_LENGTH_150 = 150
+MAX_LENGTH_250 = 250
+MAX_LENGTH_254 = 254
+
 
 class User(AbstractUser):
     """Модель пользователей"""
@@ -18,20 +23,20 @@ class User(AbstractUser):
     first_name = models.CharField(
         verbose_name='Имя пользователя',
         help_text='Введите имя пользователя',
-        max_length=150,
+        max_length=MAX_LENGTH_150,
         blank=True
     )
 
     last_name = models.CharField(
         verbose_name='Фамилия пользователя',
         help_text='Введите фамилию пользователя',
-        max_length=150,
+        max_length=MAX_LENGTH_150,
         blank=True
     )
 
     email = models.EmailField(
         blank=False,
-        max_length=254,
+        max_length=MAX_LENGTH_254,
         unique=True
     )
 
@@ -39,10 +44,14 @@ class User(AbstractUser):
         verbose_name='Уникальное имя пользователя',
         help_text='Введите username',
         blank=False,
-        max_length=150,
+        max_length=MAX_LENGTH_150,
         validators=[validate_username,
                     RegexValidator(regex=r'^[\w.@+-]+$',
-                                   message='Неправильный формат поля',
+                                   message=(
+                                       'Неправильный формат поля'
+                                       'Поле может содержать только буквы,'
+                                       'цифры и следующие символы: @ . + -'
+                                    ),
                                    code='invalid_field')],
         unique=True
     )
@@ -54,7 +63,7 @@ class User(AbstractUser):
     )
 
     role = models.CharField(
-        max_length=50,
+        max_length=MAX_LENGTH_50,
         verbose_name='Модель пользователя',
         help_text='Можно выбрать из трех: "user" "moderator" "admin"',
         choices=ROLES,
@@ -63,11 +72,12 @@ class User(AbstractUser):
     )
 
     confirmation_code = models.CharField(
-        max_length=250,
+        max_length=MAX_LENGTH_250,
         null=True,
         blank=True
     )
 
     class Meta:
+        ordering = ['username', ]
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
