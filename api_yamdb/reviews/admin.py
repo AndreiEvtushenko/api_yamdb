@@ -24,13 +24,18 @@ class GenresAdmin(admin.ModelAdmin):
     empty_value_display = 'пусто'
 
 
+class GenreTitleInline(admin.TabularInline):
+    model = GenreTitle
+
+
 class TitlesAdmin(admin.ModelAdmin):
+    inlines = [GenreTitleInline]
     list_display = (
         'pk',
         'name',
         'year',
         'description',
-        'category',
+        'category'
     )
     search_fields = ('name',)
     list_filter = ('year',)
