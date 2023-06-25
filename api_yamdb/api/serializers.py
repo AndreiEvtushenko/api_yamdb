@@ -119,7 +119,7 @@ class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Поле не может быть пустым.'
                 f'Вы указали название: {name}.'
-                )
+            )
 
         if len(name) > 256:
             raise serializers.ValidationError('Название не более 256 символов')
