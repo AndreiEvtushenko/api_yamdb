@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .constants import NOT_FOUND_USER_WITH_EMAIL, NOT_FOUND_USER
+from .constants import NOT_FOUND_USER_WITH_EMAIL
 from .permissions import (CommentReviewsPermission,
                           OnlyAdminOrSuperUserPermission,
                           SaveMethodsOrAdminPermission)
