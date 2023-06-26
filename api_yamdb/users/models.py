@@ -11,10 +11,10 @@ ROLES = [
     ('admin', 'Администратор'),
 ]
 
-MAX_LENGTH_50 = 50
-MAX_LENGTH_150 = 150
-MAX_LENGTH_250 = 250
-MAX_LENGTH_254 = 254
+MAX_LENGTH_50: int = 50
+MAX_LENGTH_150: int = 150
+MAX_LENGTH_250: int = 250
+MAX_LENGTH_254: int = 254
 
 
 class User(AbstractUser):

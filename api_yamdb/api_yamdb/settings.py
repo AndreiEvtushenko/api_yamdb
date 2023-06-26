@@ -1,4 +1,4 @@
 from split_settings.tools import include
 
-include('base.py')
-include('my_settings.py')
+include('settings/base.py')
+include('settings/my_settings.py')

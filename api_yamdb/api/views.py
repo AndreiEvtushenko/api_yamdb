@@ -12,14 +12,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .constants import (NOT_FOUND_CATEGORY, NOT_FOUND_GENRE,
-                        NOT_FOUND_USER_WITH_EMAIL, NOT_FOUND_USER)
+from .constants import NOT_FOUND_USER_WITH_EMAIL, NOT_FOUND_USER
 from .permissions import (CommentReviewsPermission,
                           OnlyAdminOrSuperUserPermission,
                           SaveMethodsOrAdminPermission)
 from .filters import TitlesFilter
 from reviews.models import Categories, Comments, Genres, Title, Review
-from .mixins import GetListCreateDelObjectMixin, UserMeViewSetMixin
+from .mixins import (DestroyMixin,
+                     GetListCreateDelObjectMixin,
+                     UserMeViewSetMixin)
 from .serializers import (CategoriesSerializer, CommentsSerializer,
                           GenresSerializer, TokenSerializer,
                           TitlesCreateUpdateSerializer, TitlesSerializer,
@@ -30,7 +31,7 @@ from .utils.create_send_code import create_send_code
 User = get_user_model()
 
 
-class CategoriesViewSet(GetListCreateDelObjectMixin):
+class CategoriesViewSet(DestroyMixin, GetListCreateDelObjectMixin):
     """Вьюсет категорий"""
 
     queryset = Categories.objects.all().order_by('id')
@@ -40,25 +41,8 @@ class CategoriesViewSet(GetListCreateDelObjectMixin):
     pagination_class = PageNumberPagination
     permission_classes = [SaveMethodsOrAdminPermission, ]
 
-    def destroy(self, request, *args, **kwargs):
-        if request.method == 'DELETE':
-            slug_categories = self.kwargs.get('pk')
 
-            category = Categories.objects.filter(slug=slug_categories)
-            if category.exists():
-                category.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            else:
-                return Response(
-                    data=NOT_FOUND_CATEGORY,
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-        else:
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-
-class GenresViewSet(GetListCreateDelObjectMixin):
+class GenresViewSet(DestroyMixin, GetListCreateDelObjectMixin):
     """Вьюсет жанров"""
 
     queryset = Genres.objects.all().order_by('id')
@@ -67,23 +51,6 @@ class GenresViewSet(GetListCreateDelObjectMixin):
     search_fields = ('name',)
     pagination_class = PageNumberPagination
     permission_classes = [SaveMethodsOrAdminPermission, ]
-
-    def destroy(self, request, *args, **kwargs):
-        if request.method == 'DELETE':
-            slug_genres = self.kwargs.get('pk')
-
-            genres = Genres.objects.filter(slug=slug_genres)
-            if genres.exists():
-                genres.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            else:
-                return Response(
-                    data=NOT_FOUND_GENRE,
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-        else:
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
@@ -214,16 +181,17 @@ class SignUpView(APIView):
                 message = NOT_FOUND_USER_WITH_EMAIL
                 return Response(message, status=status.HTTP_400_BAD_REQUEST)
             elif User.objects.filter(username=username).exists():
-                message = NOT_FOUND_USER
-                return Response(message, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    NOT_FOUND_USER_WITH_EMAIL,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             else:
                 user = User.objects.create(username=username,
                                            email=email)
                 create_send_code(user, username, email)
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
-        user = User.objects.get(username=username, email=email)
-        create_send_code(user, username, email)
+        create_send_code(user.first(), username, email)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

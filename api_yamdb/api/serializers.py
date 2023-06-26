@@ -95,15 +95,18 @@ class UserMeSerializer(serializers.ModelSerializer):
 
 class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
     """Сериализатор проиведений для небезопасных запросов"""
+
     genre = serializers.SlugRelatedField(
         many=True,
         slug_field='slug',
         queryset=Genres.objects.all()
     )
+
     category = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Categories.objects.all()
     )
+
     rating = serializers.SerializerMethodField()
 
     class Meta:
@@ -111,34 +114,36 @@ class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
                   'description', 'genre', 'category')
         model = Title
 
-    def validate(self, attrs):
-        name = attrs.get('name')
-        year = attrs.get('year')
-
-        if not name:
+    def validate_name(self, value):
+        if not value:
             raise serializers.ValidationError(
                 'Поле не может быть пустым.'
-                f'Вы указали название: {name}.'
+                f'Вы указали название: {value}.'
             )
 
-        if len(name) > 256:
+        if len(value) > 256:
             raise serializers.ValidationError('Название не более 256 символов')
 
+        return value
+
+    def validate_year(self, value):
         current_year = timezone.now().year
 
-        if year and year > current_year:
+        if value and value > current_year:
             raise serializers.ValidationError(
-                f'Год выпуска произведения не может быть больше текущего.'
-                f'Вы указали: "{year}", текущий год: "{current_year}".'
+                'Год выпуска произведения не может быть больше текущего.'
+                f'Вы указали: "{value}", текущий год: "{current_year}".'
             )
 
-        return attrs
+        return value
 
     def get_rating(self, obj):
         return get_rating(self, obj)
 
 
 class SignupSerializer(serializers.ModelSerializer):
+    """Сериализатор регистрации пользователей"""
+
     username = serializers.RegexField(
         regex=r'^[\w.@+-]+$',
         max_length=150,
@@ -148,6 +153,7 @@ class SignupSerializer(serializers.ModelSerializer):
             'required': USERNAME_REQUIRED_ERROR,
         }
     )
+
     email = serializers.EmailField(max_length=254, required=True)
 
     class Meta:
@@ -160,9 +166,12 @@ class SignupSerializer(serializers.ModelSerializer):
 
         if value == 'me':
             raise serializers.ValidationError('Нельзя использовать me')
+
         return value
 
 
 class TokenSerializer(serializers.Serializer):
+    """Сериализатор получения токена пользователя"""
+
     username = serializers.CharField()
     confirmation_code = serializers.CharField()

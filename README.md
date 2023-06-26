@@ -1,6 +1,12 @@
-
 # API YaMDb
 
+## Стек технологий в проекте
+
+Python
+Django
+Django REST Framework
+SQLite3
+HTML
 
 ## Описание проекта
 

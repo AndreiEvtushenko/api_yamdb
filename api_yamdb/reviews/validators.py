@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 
-def validate_year(value):
+def validate_year(value: int) -> None:
     """Проверяет корректность года выпуска"""
     current_year = timezone.now().year
 

@@ -25,7 +25,9 @@ v1_router.register(
 urlpatterns = [
     path('users/me/', views.UserMeAPIView.as_view(
         {'get': 'retrieve', 'patch': 'partial_update'})),
-    path('auth/signup/', views.SignUpView.as_view()),
-    path('auth/token/', views.TokenView.as_view()),
+    path('auth/', include([
+        path('signup/', views.SignUpView.as_view()),
+        path('token/', views.TokenView.as_view())
+    ])),
     path('', include(v1_router.urls)),
 ]
