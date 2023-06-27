@@ -1,4 +1,4 @@
-def get_rating(self, obj):
+def get_rating(obj):
     ratings = obj.reviews_title_id.all()
     scores = [rating.score for rating in ratings]
 
