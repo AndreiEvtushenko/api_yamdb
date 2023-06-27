@@ -59,7 +59,7 @@ class TitlesSerializer(serializers.ModelSerializer):
         model = Title
 
     def get_rating(self, obj):
-        return get_rating(self, obj)
+        return get_rating(obj)
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
@@ -138,7 +138,7 @@ class TitlesCreateUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def get_rating(self, obj):
-        return get_rating(self, obj)
+        return get_rating(obj)
 
 
 class SignupSerializer(serializers.ModelSerializer):
