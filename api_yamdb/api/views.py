@@ -12,7 +12,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .constants import NOT_FOUND_USER_WITH_EMAIL
+from .constants import (NOT_FOUND_USER_WITH_EMAIL,
+                        NOT_FOUND_CATEGORY,
+                        NOT_FOUND_GENRE)
 from .permissions import (CommentReviewsPermission,
                           OnlyAdminOrSuperUserPermission,
                           SaveMethodsOrAdminPermission)
@@ -41,6 +43,12 @@ class CategoriesViewSet(DestroyMixin, GetListCreateDelObjectMixin):
     pagination_class = PageNumberPagination
     permission_classes = [SaveMethodsOrAdminPermission, ]
 
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, Categories, *args, **kwargs)
+
+    def get_not_found_message(self):
+        return NOT_FOUND_CATEGORY
+
 
 class GenresViewSet(DestroyMixin, GetListCreateDelObjectMixin):
     """Вьюсет жанров"""
@@ -51,6 +59,12 @@ class GenresViewSet(DestroyMixin, GetListCreateDelObjectMixin):
     search_fields = ('name',)
     pagination_class = PageNumberPagination
     permission_classes = [SaveMethodsOrAdminPermission, ]
+
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, Genres, *args, **kwargs)
+
+    def get_not_found_message(self):
+        return NOT_FOUND_GENRE
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
@@ -178,8 +192,10 @@ class SignUpView(APIView):
         user = User.objects.filter(username=username, email=email)
         if not user:
             if User.objects.filter(email=email).exists():
-                message = NOT_FOUND_USER_WITH_EMAIL
-                return Response(message, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    NOT_FOUND_USER_WITH_EMAIL,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             elif User.objects.filter(username=username).exists():
                 return Response(
                     NOT_FOUND_USER_WITH_EMAIL,

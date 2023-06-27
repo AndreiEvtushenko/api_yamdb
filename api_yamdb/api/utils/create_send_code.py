@@ -6,7 +6,7 @@ from .fake_email_utils import send_fake_email
 User = get_user_model()
 
 
-def create_send_code(user, username, email):
+def create_send_code(user, username, email) -> None:
     """Генерирует код, отправляет код пользователю"""
     confirmation_code = create_verification_code()
     user.confirmation_code = confirmation_code
